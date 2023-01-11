@@ -1,5 +1,5 @@
 import * as CANNON from "https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"
-import * as three from "https://threejs.org/build/three.module.js";
+import * as THREE from "https://threejs.org/build/three.module.js";
 import { OrbitControls } from 'https://threejs.org/examples/jsm/controls/OrbitControls.js';
 
 
