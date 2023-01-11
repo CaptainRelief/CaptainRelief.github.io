@@ -1,158 +1,134 @@
-// Set up canvas
-const canvas = document.getElementById("game-canvas");
-const ctx = canvas.getContext("2d");
+import * as THREE from "https://threejs.org/build/three.module.js";
+import { OrbitControls } from 'https://threejs.org/examples/jsm/controls/OrbitControls.js';
 
-// Set up character
-const character = {
-  x: 0,
-  y: 0,
-  size: 50,
-  color: "red",
-  speed: 3,
-  acceleration: 0.1,
-  deceleration: 0.1,
-  maxSpeed: 5,
-  velocityX: 0,
-  velocityY: 0,
-  friction: 0.95,
-  gravity: 0.5,
-  jumpStrength: 10,
-  jumping: false,
-};
-
-// Set up ground
-const ground = {
-    x: 10,
-    y: 10,
-    width: 500,
-    height: 500,
-    color: "green",
-  };
- 
- 
-// Set up isometric projection variables
-const projectionCenterX = canvas.width / 2;
-const projectionCenterY = canvas.height / 2;
-const projectionAngleX = Math.PI / 1;
-const projectionAngleY = -Math.PI / 1;
-const projectionScaleX = 1;
-const projectionScaleY = 0.5;
+var world = new CANNON.World();
 
 
-// Apply isometric projection to canvas
-const applyProjection = () => {
-    ctx.save();
-  
-    ctx.translate(projectionCenterX, projectionCenterY);
-    ctx.rotate(projectionAngleX);
-    ctx.scale(projectionScaleX, projectionScaleY);
-    ctx.rotate(projectionAngleY);
-    ctx.translate(-projectionCenterX, -projectionCenterY);
-  };
+// Create the ground as a PlaneBufferGeometry with a MeshBasicMaterial
+var groundGeometry = new THREE.PlaneBufferGeometry(10, 10);
+var groundMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+var ground = new THREE.Mesh(groundGeometry, groundMaterial);
 
+// Rotate and position the ground
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.5;
 
-// Handle keyboard input
-// Handle keyboard input
-document.addEventListener("keydown", (event) => {
-    switch (event.key) {
-      case "ArrowUp":
-      case "w":
-        if (!character.jumping) {
-          character.velocityY -= character.jumpStrength;
-          character.jumping = true;
-        }
-        break;
-      case "ArrowDown":
-      case "s":
-        character.velocityY += character.acceleration;
-        break;
-      case "ArrowLeft":
-      case "a":
-        character.velocityX -= character.acceleration;
-        break;
-      case "ArrowRight":
-      case "d":
-        character.velocityX += character.acceleration;
-        break;
-    }
+var characterGeometry = new THREE.BoxGeometry(1, 1, 1)
+var characterMaterial = new THREE.MeshBasicMaterial({ transparent: true, color: 0xff0000 });
+var character = new THREE.Mesh(characterGeometry, characterMaterial);
+
+character.position.set(0, 0, 0);
+character.opacity = 0;
+
+// Create a sprite using a texture
+var spriteMap = new THREE.TextureLoader().load("haamu.png");
+var spriteMaterial = new THREE.SpriteMaterial({ map: spriteMap });
+var sprite = new THREE.Sprite(spriteMaterial);
+
+sprite.position.set(0, 5, 0);
+// Scale the sprite
+sprite.scale.set(10, 10, 1);
+
+sprite.material.opacity = 1;
+
+// Add the sprite as a child of the cube
+character.add(sprite);
+
+var camera = new THREE.PerspectiveCamera(120, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(10, 10, 10);
+camera.lookAt(character.position);
+
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+var controls = new OrbitControls( camera, renderer.domElement );
+
+var scene = new THREE.Scene();
+scene.add(character);
+scene.add(camera);
+
+// Add the ground to the scene
+scene.add(ground);
+
+// Create a physics body for the ground
+var groundBody = new CANNON.Body({
+    mass: 0, // mass of 0 makes it immovable
+    position: new CANNON.Vec3(0, -0.5, 0), // position it at the bottom of the scene
+    shape: new CANNON.Plane()
   });
-  
-  document.addEventListener("keyup", (event) => {
-    switch (event.key) {
-      case "ArrowUp":
-      case "w":
-        character.velocityY += character.deceleration;
-        break;
-      case "ArrowDown":
-      case "s":
-        character.velocityY -= character.deceleration;
-        break;
-      case "ArrowLeft":
-      case "a":
-        character.velocityX += character.deceleration;
-        break;
-      case "ArrowRight":
-      case "d":
-        character.velocityX -= character.deceleration;
-        break;
-    }
-  });
-  
-  // Update character position
-  const updateCharacter = () => {
-    // Apply velocity to character position
-    character.x += character.velocityX;
-    character.y += character.velocityY;
-  
-    // Apply friction to velocity
-    character.velocityX *= character.friction;
-    character.velocityY *= character.friction;
-  
-    // Apply gravity to velocity
-    //character.velocityY += character.gravity;
-  
-    // Limit velocity to maximum speed
-    character.velocityX = Math.min(character.velocityX, character.maxSpeed);
-    character.velocityX = Math.max(character.velocityX, -character.maxSpeed);
-    character.velocityY = Math.min(character.velocityY, character.maxSpeed);
-    character.velocityY = Math.max(character.velocityY, -character.maxSpeed);
-};
+  world.addBody(groundBody);
 
   
-// Draw character on canvas
-const drawCharacter = () => { 
-    applyProjection();
-    // Draw character
-    ctx.fillStyle = character.color;
-    ctx.fillRect(character.x, character.y, character.size, character.size);
+// Create a physics body for the character
+var characterBody = new CANNON.Body({
+    mass: 1, // 1 kg
+    position: new CANNON.Vec3(0, 0, 0),
+    shape: new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5))
+  });
+  world.addBody(characterBody);
+  world.addBody(groundBody);
+
+var contactMaterial = new CANNON.ContactMaterial(groundMaterial, characterMaterial, {
+    friction: 0.01,
+    restitution: 0.3,
+    contactEquationStiffness: 1e8,
+    contactEquationRelaxation: 3,
+    frictionEquationStiffness: 1e8,
+    frictionEquationRegularizationTime: 3
+});
+world.addContactMaterial(contactMaterial);
+
+  // Create a constraint to keep the character on the ground
+    var characterGroundConstraint = new CANNON.LockConstraint(characterBody, groundBody);
+  world.addConstraint(characterGroundConstraint);
+
+  var force = new CANNON.Vec3(); // force vector
+  var forceDirection = new CANNON.Vec3(); // force direction
+  
+  document.addEventListener("keydown", onDocumentKeyDown, false);
+  document.addEventListener("keyup", onDocumentKeyUp, false);
+  
+  const movementSpeed = 0.001;
+
+  function onDocumentKeyDown(event) {
+    var keyCode = event.which;
+    if (keyCode == 87) {
+        // W key
+        forceDirection.set(0, 0, -1); // set the force direction
+    } else if (keyCode == 83) {
+        // S key
+        forceDirection.set(0, 0, 1); // set the force direction
+    } else if (keyCode == 65) {
+        // A key
+        forceDirection.set(-1, 0, 0); // set the force direction
+    } else if (keyCode == 68) {
+        // D key
+        forceDirection.set(1, 0, 0); // set the force direction
+    }
+    force.copy(forceDirection.scale(movementSpeed)); // set the force
+    characterBody.applyLocalForce(force, new CANNON.Vec3()); // apply the
+}
+  function onDocumentKeyUp(event) {
+    forceDirection.set(0, 0, 0);
+    force.set(0, 0, 0);
+    }
     
-    ctx.restore();
-  };
 
 
-  
-// Draw ground on canvas
-const drawGround = () => {
-    ctx.save();
-  
-    applyProjection();
-    // Draw ground
-    ctx.fillStyle = ground.color;
-    ctx.fillRect(ground.x, ground.y, ground.width, ground.height);
-  
-    ctx.restore();
-  };
+var timeStep = (1 / 60);
 
+function render() {
+    world.step(timeStep);
+    requestAnimationFrame(render);
+    character.position.copy(characterBody.position);
+    character.quaternion.copy(characterBody.quaternion);
+    renderer.render(scene, camera);
+}
 
+render();
 
-// Update and draw canvas
-const draw = () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  updateCharacter();
-  drawGround();
-  drawCharacter();
-
-  requestAnimationFrame(draw);
-};
-
-draw();
+function cleanup() {
+    world.remove(groundBody);
+    world.remove(characterBody);
+}
