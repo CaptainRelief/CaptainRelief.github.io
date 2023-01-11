@@ -17,7 +17,7 @@
         }
       }
     </script>
-
+    <canvas id="c"></canvas>
     <script type="module">
         import * as CANNON from "cannon";
         import * as THREE from 'three';
@@ -64,10 +64,11 @@
         camera.lookAt(character.position);
 
         var renderer = new THREE.WebGLRenderer({canvas});
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        renderer.setRenderTarget(canvas);
         document.body.appendChild(renderer.domElement);
 
-        var controls = new OrbitControls(camera, renderer.domElement);
+        var controls = new THREE.OrbitControls( camera, canvas );
 
         var scene = new THREE.Scene();
         scene.add(character);
@@ -149,6 +150,8 @@
             character.position.copy(characterBody.position);
             character.quaternion.copy(characterBody.quaternion);
             renderer.render(scene, camera);
+
+            controls.update();
         }
 
         render();
