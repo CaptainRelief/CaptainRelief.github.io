@@ -11,6 +11,7 @@
     <script type="importmap">
       {
         "imports": {
+          "cannon": "https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js",
           "three": "https://unpkg.com/three@0.148.0/build/three.module.js",
           "three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/"
         }
@@ -18,7 +19,7 @@
     </script>
 
     <script type="module">
-        import * as CANNON from "https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js";
+        import * as CANNON from "cannon";
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
