@@ -33,7 +33,7 @@
 
         // Player
         const playerGeometry = new THREE.PlaneGeometry(1, 1);
-        const playerMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        const playerMaterial = new THREE.MeshBasicMaterial({ transparent: true, color: 0x00ff00 });
         playerMaterial.opacity = 0;
         const player = new THREE.Mesh(playerGeometry, playerMaterial);
         scene.add(player);
@@ -59,11 +59,27 @@
 
 
         // Enemy
-        const enemyGeometry = new THREE.BoxGeometry(1, 1, 1);
-        const enemyMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const enemyGeometry = new THREE.PlaneGeometry(1, 1);
+        const enemyMaterial = new THREE.MeshBasicMaterial({ transparent: true, color: 0xff0000 });
+        enemyMaterial.opacity = 0;
         const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
         enemy.position.x = 3;
         scene.add(enemy);
+
+        var enemySpriteMap = new THREE.TextureLoader().load("enemy.png");
+        var enemySpriteMaterial = new THREE.SpriteMaterial({ map: enemySpriteMap });
+        var enemySprite = new THREE.Sprite(enemySpriteMaterial);
+
+        // Set the position of the sprite relative to the cube
+        enemySprite.position.set(0, 0.5, 0);
+
+        // Scale the sprite
+        enemySprite.scale.set(1, 1, 1);
+        
+        // make the sprite visible 
+        enemySprite.material.opacity = 1;
+
+        enemy.add(enemySprite);
 
         const light = new THREE.AmbientLight(0x404040);
         scene.add(light);
