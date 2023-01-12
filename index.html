@@ -60,7 +60,7 @@
         enemy.position.x = 3;
         scene.add(enemy);
 
-        const light = new THREE.PointLight(0xFFFFFF);
+        const light = new THREE.AmbientLight(0xFFFFFF);
         light.position.set(-10, 10, 10);
         scene.add(light);
 
