@@ -3,6 +3,10 @@
 
 <head>
     <title>My Three.js Project</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link id="touch-icon" rel="apple-touch-icon" href="touch-icon.png">
+
+
 </head>
 
 <body>
@@ -37,7 +41,7 @@
         playerMaterial.opacity = 0;
         const player = new THREE.Mesh(playerGeometry, playerMaterial);
         scene.add(player);
-  
+
 
 
         // Create a sprite using a texture
@@ -75,7 +79,7 @@
 
         // Scale the sprite
         enemySprite.scale.set(1, 1, 1);
-        
+
         // make the sprite visible 
         //enemySprite.material.opacity = 1;
 
@@ -89,7 +93,7 @@
         const gridHelper = new THREE.GridHelper(size, divisions);
         scene.add(gridHelper);
 
-        
+
         // Handle user input
         const input = {
             left: false,
@@ -110,31 +114,42 @@
             if (event.keyCode === 40) input.down = false;
         });
 
-            let joystick = {
+        let joystick = {
             x: 0,
             y: 0
-            };
+        };
 
-            const joystickRadius = 100;
+// Get a reference to the touch icon element
+const touchIcon = document.querySelector("#touch-icon");
 
-            document.addEventListener("touchmove", (event) => {
-            let touchX = event.touches[0].clientX;
-            let touchY = event.touches[0].clientY;
 
-            // Normalize the joystick position to be between -1 and 1
-            joystick.x = (touchX - window.innerWidth / 2) / joystickRadius;
-            joystick.y = (touchY - window.innerHeight / 2) / joystickRadius;
+// Get the center of the touch icon
+const iconCenter = {
+  x: touchIcon.offsetLeft + touchIcon.offsetWidth / 2,
+  y: touchIcon.offsetTop + touchIcon.offsetHeight / 2
+};
 
-// Clamp the joystick position to the edges of the joystick area
-joystick.x = Math.min(Math.max(joystick.x, -1), 1);
-joystick.y = Math.min(Math.max(joystick.y, -1), 1);
+// Add a touch start event listener to the touch icon
+touchIcon.addEventListener("touchstart", event => {
+  // Get the initial x and y coordinates of the touch
+  const initialX = event.touches[0].clientX;
+  const initialY = event.touches[0].clientY;
 
-// Map the joystick position to player movement
-player.position.x += joystick.x * playerSpeed;
-player.position.y += joystick.y * playerSpeed;
+  // Add a touch move event listener to the touch icon
+  touchIcon.addEventListener("touchmove", event => {
+    // Get the current x and y coordinates of the touch
+    const currentX = event.touches[0].clientX;
+    const currentY = event.touches[0].clientY;
+
+    // Calculate the angle of the touch in relation to the center of the icon
+    let angle = Math.atan2(currentY - iconCenter.y, currentX - iconCenter.x);
+
+    // Update the position of the player based on the angle
+    player.position.x += Math.cos(angle) * 0.1;
+    player.position.z += Math.sin(angle) * 0.1;
+  });
 });
 
-                
 
         // Render loop
         const render = function () {
@@ -168,7 +183,7 @@ player.position.y += joystick.y * playerSpeed;
             camera.rotation.y = 0;
             camera.rotation.z = 0;
 
-          
+
 
         };
 
