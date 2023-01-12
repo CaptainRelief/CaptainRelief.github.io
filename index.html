@@ -16,76 +16,93 @@
         }
       }
     </script>
-    <canvas id="c"></canvas>
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        const canvas = document.getElementById("c");
+
 
         // Three.js setup
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize({ canvas });
-document.body.appendChild(renderer.domElement);
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-// Player
-const playerGeometry = new THREE.BoxGeometry(1, 1, 1);
-const playerMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-const player = new THREE.Mesh(playerGeometry, playerMaterial);
-scene.add(player);
+        // Player
+        const playerGeometry = new THREE.BoxGeometry(1, 1, 1);
+        const playerMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        scene.add(player);
 
-// Enemy
-const enemyGeometry = new THREE.BoxGeometry(1, 1, 1);
-const enemyMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
-enemy.position.x = 3;
-scene.add(enemy);
+        // Create a sprite using a texture
+        var spriteMap = new THREE.TextureLoader().load("haamu.png");
+        var spriteMaterial = new THREE.SpriteMaterial({ map: spriteMap });
+        var sprite = new THREE.Sprite(spriteMaterial);
 
-// Render loop
-const render = function() {
-  requestAnimationFrame(render);
+        // Set the position of the sprite relative to the cube
+        sprite.position.set(0, 0.5, 0);
 
-  // Move player based on user input
-  if (input.left) {
-    player.position.x -= 0.1;
-  }
-  if (input.right) {
-    player.position.x += 0.1;
-  }
-  if (input.up) {
-    player.position.z -= 0.1;
-  }
-  if (input.down) {
-    player.position.z += 0.1;
-  }
+        // Scale the sprite
+        sprite.scale.set(0.5, 0.5, 1);
 
-  renderer.render(scene, camera);
-};
+        // make the sprite visible 
+        sprite.material.opacity = 1;
 
-// Handle user input
-const input = {
-  left: false,
-  right: false,
-  up: false,
-  down: false
-};
-document.addEventListener("keydown", event => {
-  if (event.keyCode === 37) input.left = true;
-  if (event.keyCode === 38) input.up = true;
-  if (event.keyCode === 39) input.right = true;
-  if (event.keyCode === 40) input.down = true;
-});
-document.addEventListener("keyup", event => {
-  if (event.keyCode === 37) input.left = false;
-  if (event.keyCode === 38) input.up = false;
-  if (event.keyCode === 39) input.right = false;
-  if (event.keyCode === 40) input.down = false;
-});
+        // Add the sprite as a child of the cube
+        playadd(sprite);
 
-// Start render loop
-render();
+
+        // Enemy
+        const enemyGeometry = new THREE.BoxGeometry(1, 1, 1);
+        const enemyMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+        enemy.position.x = 3;
+        scene.add(enemy);
+
+        // Render loop
+        const render = function () {
+            requestAnimationFrame(render);
+
+            // Move player based on user input
+            if (input.left) {
+                player.position.x -= 0.1;
+            }
+            if (input.right) {
+                player.position.x += 0.1;
+            }
+            if (input.up) {
+                player.position.z -= 0.1;
+            }
+            if (input.down) {
+                player.position.z += 0.1;
+            }
+
+            renderer.render(scene, camera);
+        };
+
+        // Handle user input
+        const input = {
+            left: false,
+            right: false,
+            up: false,
+            down: false
+        };
+        document.addEventListener("keydown", event => {
+            if (event.keyCode === 37) input.left = true;
+            if (event.keyCode === 38) input.up = true;
+            if (event.keyCode === 39) input.right = true;
+            if (event.keyCode === 40) input.down = true;
+        });
+        document.addEventListener("keyup", event => {
+            if (event.keyCode === 37) input.left = false;
+            if (event.keyCode === 38) input.up = false;
+            if (event.keyCode === 39) input.right = false;
+            if (event.keyCode === 40) input.down = false;
+        });
+
+        // Start render loop
+        render();
 
 
 
