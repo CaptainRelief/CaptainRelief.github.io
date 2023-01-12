@@ -77,6 +77,7 @@
 
 
         // Enemy
+        const enemySpeed = 0.1;
         const enemyGeometry = new THREE.PlaneGeometry(1, 1);
         const enemyMaterial = new THREE.MeshBasicMaterial({ transparent: true, color: 0xff0000 });
         enemyMaterial.opacity = 0;
@@ -133,6 +134,35 @@
         // Add the tree sprite to the scene
         tree.add(treeSprite);
 
+        let direction;
+
+        const updateEnemy = function () {
+            // Get the distance between the enemy and the player
+            const distance = player.position.distanceTo(enemy.position);
+
+            // If the distance is less than 2 units, start attacking the player
+            if (distance < 0.3) {
+                // Attack logic here
+                
+            } else {
+                // Move towards the player
+                direction = new THREE.Vector3().subVectors(player.position, enemy.position).normalize();
+                enemy.position.add(direction.multiplyScalar(enemySpeed));
+            }
+        }
+
+        // Real-time combat using raycasting
+        const attack = function () {
+            // Create a ray from the enemy's position in the direction of the player
+            const ray = new THREE.Raycaster(enemy.position, direction);
+
+            // Check if the ray intersects with the player
+            const intersects = ray.intersectObject(player);
+            if (intersects.length > 0) {
+                // If it does, deal damage to the player
+                player.health -= 1;
+            }
+        }
 
         // Handle user input
         const input = {
@@ -213,6 +243,8 @@
         // Render loop
         const render = function () {
             requestAnimationFrame(render);
+
+            updateEnemy();
 
             // Move player based on user input
             if (input.left) {
