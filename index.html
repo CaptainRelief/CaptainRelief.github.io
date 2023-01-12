@@ -24,7 +24,7 @@
 
         // Three.js setup
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 
 
         const renderer = new THREE.WebGLRenderer();
@@ -33,10 +33,11 @@
 
         // Player
         const playerGeometry = new THREE.BoxGeometry(1, 1, 1);
-        const playerMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        const playerMaterial = new THREE.MeshBasicMaterial({ transparent: true, color: 0x00ff00 });
         const player = new THREE.Mesh(playerGeometry, playerMaterial);
         scene.add(player);
-        camera.lookAt(player.position);
+  
+
 
         // Create a sprite using a texture
         var spriteMap = new THREE.TextureLoader().load("haamu.png");
@@ -47,7 +48,7 @@
         sprite.position.set(0, 0.5, 0);
 
         // Scale the sprite
-        sprite.scale.set(5, 5, 1);
+        sprite.scale.set(2, 2, 1);
 
         // make the sprite visible 
         sprite.material.opacity = 1;
@@ -71,6 +72,7 @@
         const gridHelper = new THREE.GridHelper(size, divisions);
         scene.add(gridHelper);
 
+        
         // Handle user input
         const input = {
             left: false,
@@ -110,18 +112,21 @@
                 player.position.z += 0.1;
             }
 
+
             renderer.render(scene, camera);
 
             // Update the camera's position and rotation to match the player's position and rotation
             camera.position.x = player.position.x;
-            camera.position.z = player.position.z;
-            camera.position.y = player.position.y + 10;
-
+            camera.position.z = player.position.z + 3;
+            camera.position.y = player.position.y + 5;
+            camera.lookAt(player.position);
 
             // Keep isometric angle
-            camera.rotation.x = -45;
+            camera.rotation.x = -1;
             camera.rotation.y = 0;
             camera.rotation.z = 0;
+
+          
 
         };
 
