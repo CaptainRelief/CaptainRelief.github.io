@@ -32,8 +32,9 @@
         document.body.appendChild(renderer.domElement);
 
         // Player
-        const playerGeometry = new THREE.BoxGeometry(1, 1, 1);
-        const playerMaterial = new THREE.MeshBasicMaterial({ transparent: true, color: 0x00ff00 });
+        const playerGeometry = new THREE.PlaneGeometry(1, 1);
+        const playerMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        playerMaterial.opacity = 0;
         const player = new THREE.Mesh(playerGeometry, playerMaterial);
         scene.add(player);
   
@@ -48,10 +49,10 @@
         sprite.position.set(0, 0.5, 0);
 
         // Scale the sprite
-        sprite.scale.set(2, 2, 1);
+        sprite.scale.set(1, 1, 1);
 
         // make the sprite visible 
-        sprite.material.opacity = 1;
+        //sprite.material.opacity = 1;
 
         // Add the sprite as a child of the cube
         player.add(sprite);
