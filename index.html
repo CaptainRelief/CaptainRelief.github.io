@@ -47,10 +47,10 @@
                 this.states = {
                     IDLE: "idle",
                     MOVE: "move",
-                    JUMP: "jump"
+                    ATTACK: "attack"
                 };
                 this.currentState = this.states.IDLE;
-                
+
                 // create player mesh
                 this.mesh = new THREE.Mesh(
                     new THREE.PlaneGeometry(1, 1),
@@ -62,13 +62,38 @@
                 this.mesh.position.x = 2;
 
                 // create player sprite
-                var spriteMap = new THREE.TextureLoader().load("/png/haamu.png");
+                var spriteMap = new THREE.TextureLoader().load("/png/player.png");
                 var spriteMaterial = new THREE.SpriteMaterial({ map: spriteMap });
                 this.sprite = new THREE.Sprite(spriteMaterial);
                 this.sprite.position.set(0, 0.5, 0);
                 this.sprite.scale.set(1, 1, 1);
                 this.mesh.add(this.sprite);
 
+
+                this.directions = {
+                    down: 3,
+                    up: 2,
+                    left: 1,
+                    right: 0
+                };
+
+
+                this.currentDirection = 'down';
+                this.currentFrameX = 0; // first frame of the idle animation on the x-axis
+                this.currentFrameY = this.directions[this.currentDirection];
+                this.maxMoveFrame = 8;
+
+                const spriteSheetWidth = 832;
+                const spriteSheetHeight = 320;
+                const frameWidth = spriteSheetWidth / 13;
+                const frameHeight = spriteSheetHeight / 4;
+                this.sprite.material.map.repeat.set(frameWidth / spriteSheetWidth, frameHeight / spriteSheetHeight);
+                this.sprite.material.map.offset.set(this.currentFrameX / 13, this.currentFrameY / 4);
+
+
+                this.lastFrameUpdate = Date.now(); // store the time of the last frame update
+                this.animationDelay = 100; // delay between frame updates, in milliseconds
+                
                 // create player body
                 this.body = new CANNON.Body({
                     mass: 1,
@@ -78,32 +103,48 @@
                 // add the body to the physics world
                 world.addBody(this.body);
 
+
+
             }
 
             update() {
                 // update the position of the mesh based on the position of the body
+
                 this.mesh.position.copy(this.body.position);
                 this.mesh.quaternion.copy(this.body.quaternion);
 
-                this.body.applyForce(world.gravity, this.body.position);          
+                this.body.applyForce(world.gravity, this.body.position);
 
-                switch (this.state) {
+                switch (this.currentState) {
                     case this.states.IDLE:
-                        
+                        this.currentFrameX = 0;
+                        this.sprite.material.map.offset.set(this.currentFrameX / 13, this.currentFrameY / 4);
+                        this.sprite.material.map.needsUpdate = true;
                         break;
                     case this.states.MOVE:
-                      
-                        break;
-                    case this.states.JUMP:
+                    if (Date.now() - this.lastFrameUpdate > this.animationDelay) {
+                        // update the frame of the animation
+                        this.currentFrameX = (this.currentFrameX + 1) % this.maxMoveFrame;
+                        if (this.currentFrameX > 12) {
+                            this.currentFrameX = 0;
+                        }
+                        this.currentFrameY = this.directions[this.currentDirection];
                         
+                        this.sprite.material.map.offset.set(this.currentFrameX / 13, player.currentFrameY / 4);
+                        this.sprite.material.map.needsUpdate = true;
+                        this.lastFrameUpdate = Date.now();
+                    }
+                        break;
+                    case this.states.ATTACK:
+
                         break;
                     default:
+
                         break;
                 }
-                 
             }
         }
-        
+
 
 
         class Enemy {
@@ -149,10 +190,10 @@
                 this.mesh.position.copy(this.body.position);
                 this.mesh.quaternion.copy(this.body.quaternion);
 
+
                 switch (this.state) {
                     case this.states.IDLE:
-                        // enemy is idle
-                        break;
+
                     case this.states.CHASING:
                         // enemy is chasing the player
                         break;
@@ -248,10 +289,30 @@
             if (event.keyCode === 40) input.down = true;
         });
         document.addEventListener("keyup", event => {
-            if (event.keyCode === 37) input.left = false;
-            if (event.keyCode === 38) input.up = false;
-            if (event.keyCode === 39) input.right = false;
-            if (event.keyCode === 40) input.down = false;
+            if (event.keyCode === 37) {
+                input.left = false;
+                player.currentState = player.states.IDLE;
+                console.log(player.currentState);
+
+            }
+
+            if (event.keyCode === 38) {
+                input.up = false;
+                player.currentState = player.states.IDLE;
+
+            }
+
+            if (event.keyCode === 39) {
+                input.right = false;
+                player.currentState = player.states.IDLE;
+
+            }
+
+            if (event.keyCode === 40) {
+                input.down = false;
+                player.currentState = player.states.IDLE;
+
+            }
         });
 
         // Get the knob element
@@ -318,19 +379,29 @@
             player.update();
             enemy.update();
 
-
             // Move player based on user input
             if (input.left) {
                 player.body.position.x -= 0.05;
+                player.currentState = player.states.MOVE;
+                player.currentDirection = 'left';
             }
             if (input.right) {
                 player.body.position.x += 0.05;
+                player.currentState = player.states.MOVE;
+                player.currentDirection = 'right';
+
             }
             if (input.up) {
                 player.body.position.z -= 0.05;
+                player.currentState = player.states.MOVE;
+                player.currentDirection = 'up';
+
             }
             if (input.down) {
                 player.body.position.z += 0.05;
+                player.currentState = player.states.MOVE;
+                player.currentDirection = 'down';
+
             }
 
             renderer.render(scene, camera);
@@ -355,6 +426,8 @@
             requestAnimationFrame(render);
             renderer.render(scene, camera);
 
+
+            console.log(player.currentState);
 
         };
 
