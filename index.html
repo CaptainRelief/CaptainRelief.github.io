@@ -51,6 +51,8 @@
                 };
                 this.currentState = this.states.IDLE;
 
+                this.speed = 0.03;
+
                 // create player mesh
                 this.mesh = new THREE.Mesh(
                     new THREE.PlaneGeometry(1, 1),
@@ -242,7 +244,7 @@
         const treeSpriteMap = new THREE.TextureLoader().load("/png/tree.png");
         const treeSpriteMaterial = new THREE.SpriteMaterial({ map: treeSpriteMap });
         const treeSprite = new THREE.Sprite(treeSpriteMaterial);
-        treeSprite.position.set(0, 0.5, 1);
+        treeSprite.position.set(0, 1, 1);
         treeSprite.scale.set(4, 4, 1);
         tree.add(treeSprite);
 
@@ -292,7 +294,6 @@
             if (event.keyCode === 37) {
                 input.left = false;
                 player.currentState = player.states.IDLE;
-                console.log(player.currentState);
 
             }
 
@@ -346,15 +347,23 @@
             // Move the player based on the touch direction
             if (Math.abs(directionX) > Math.abs(directionY)) {
                 if (directionX > 0) {
-                    player.mesh.position.x += 0.1;
+                    player.body.position.x += player.speed;
+                    player.currentState = player.states.MOVE;
+                    player.currentDirection = 'right';
                 } else {
-                    player.mesh.position.x -= 0.1;
+                    player.body.position.x -= player.speed;
+                    player.currentState = player.states.MOVE;
+                    player.currentDirection = 'left';
                 }
             } else {
                 if (directionY > 0) {
-                    player.mesh.position.z += 0.1;
+                    player.body.position.z += player.speed;
+                    player.currentState = player.states.MOVE;
+                    player.currentDirection = 'down';
                 } else {
-                    player.mesh.position.z -= 0.1;
+                    player.body.position.z -= player.speed;
+                    player.currentState = player.states.MOVE;
+                    player.currentDirection = 'up';
                 }
             }
         });
@@ -381,24 +390,24 @@
 
             // Move player based on user input
             if (input.left) {
-                player.body.position.x -= 0.05;
+                player.body.position.x -= player.speed;
                 player.currentState = player.states.MOVE;
                 player.currentDirection = 'left';
             }
             if (input.right) {
-                player.body.position.x += 0.05;
+                player.body.position.x += player.speed;
                 player.currentState = player.states.MOVE;
                 player.currentDirection = 'right';
 
             }
             if (input.up) {
-                player.body.position.z -= 0.05;
+                player.body.position.z -= player.speed;
                 player.currentState = player.states.MOVE;
                 player.currentDirection = 'up';
 
             }
             if (input.down) {
-                player.body.position.z += 0.05;
+                player.body.position.z += player.speed;
                 player.currentState = player.states.MOVE;
                 player.currentDirection = 'down';
 
