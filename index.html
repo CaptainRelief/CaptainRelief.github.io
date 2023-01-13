@@ -410,7 +410,16 @@ body {
 
 
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        //const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.OrthographicCamera( 
+        -window.innerWidth / 400,   // left
+        window.innerWidth / 400,    // right
+        window.innerHeight / 400,   // top
+        -window.innerHeight / 400,  // bottom
+        0.1,          // near
+        1000           // far
+        );
+        
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
@@ -425,6 +434,15 @@ body {
         const gridHelper = new THREE.GridHelper(size, divisions);
         scene.add(gridHelper);
 
+        // Load the texture for the ground body
+        const groundTexture = new THREE.TextureLoader().load("png/ground.png");
+
+        // Create the material for the ground body
+        const groundMaterial = new THREE.MeshBasicMaterial({ map: groundTexture });
+        const groundGeometry = new THREE.BoxGeometry(10, 1, 10);
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        scene.add(ground);
+
 
         // Tree
         const treeGeometry = new THREE.PlaneGeometry(1, 1);
@@ -436,24 +454,29 @@ body {
         const treeSpriteMap = new THREE.TextureLoader().load("/png/tree.png");
         const treeSpriteMaterial = new THREE.SpriteMaterial({ map: treeSpriteMap });
         const treeSprite = new THREE.Sprite(treeSpriteMaterial);
-        treeSprite.position.set(0, 1, 1);
+        treeSprite.position.set(0, 1, -0.4);
         treeSprite.scale.set(4, 4, 1);
         tree.add(treeSprite);
 
+        const treeShape = new CANNON.Box(new CANNON.Vec3(0.6, 4, 0.3));
+        const treeBody = new CANNON.Body({ mass: 0, shape: treeShape });
+        treeBody.position.set(0, 0.4, 0.4);
+        tree.position.copy(treeBody.position);
 
         // Create a new world
         const world = new CANNON.World();
         world.gravity.set(0, -9.8, 0);
         const shape = new CANNON.Box(new CANNON.Vec3(1, 1, 1));
-        const gridShape = new CANNON.Box(new CANNON.Vec3(10, 10, 1));
+        const groundShape = new CANNON.Box(new CANNON.Vec3(10, 10, 1));
         // Create Cannon.js bodies for the meshes
-        const groundBody = new CANNON.Body({ mass: 0, shape: gridShape });
+        const groundBody = new CANNON.Body({ mass: 0, shape: groundShape });
         groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 1, 1), -Math.PI / 2);
         gridHelper.position.copy(groundBody.position);
-
+        ground.position.copy(groundBody.position);
         //gridHelper.quaternion.copy(groundBody.quaternion);
 
         world.addBody(groundBody);
+        world.addBody(treeBody);
 
         let gameManager = new GameManager();
         scene.add(gameManager.player.mesh);
