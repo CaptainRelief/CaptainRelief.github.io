@@ -58,7 +58,8 @@
                 );
                 this.mesh.material.opacity = 0;
 
-                this.mesh.position.y = 1;
+                this.mesh.position.y = 0.75;
+                this.mesh.position.x = 2;
 
                 // create player sprite
                 var spriteMap = new THREE.TextureLoader().load("/png/haamu.png");
@@ -72,7 +73,7 @@
                 this.body = new CANNON.Body({
                     mass: 1,
                     position: new CANNON.Vec3(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z),
-                    shape: new CANNON.Box(new CANNON.Vec3(0.1, 0.1, 0.1))
+                    shape: new CANNON.Box(new CANNON.Vec3(0.2, 0.2, 0.2))
                 });
                 // add the body to the physics world
                 world.addBody(this.body);
@@ -122,6 +123,9 @@
                 );
                 this.mesh.material.opacity = 0;
 
+                this.mesh.position.y = 0.75;
+                this.mesh.position.x = -2;
+
                 // create enemy sprite
                 var spriteMap = new THREE.TextureLoader().load("/png/enemy.png");
                 var spriteMaterial = new THREE.SpriteMaterial({ map: spriteMap });
@@ -134,13 +138,17 @@
                 this.body = new CANNON.Body({
                     mass: 1,
                     position: new CANNON.Vec3(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z),
-                    shape: new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5))
+                    shape: new CANNON.Box(new CANNON.Vec3(0.2, 0.2, 0.2))
                 });
                 // add the body to the physics world
                 world.addBody(this.body);
             }
 
             update() {
+
+                this.mesh.position.copy(this.body.position);
+                this.mesh.quaternion.copy(this.body.quaternion);
+
                 switch (this.state) {
                     case this.states.IDLE:
                         // enemy is idle
