@@ -60,7 +60,7 @@
         class GameManager {
             constructor() {
                 this.player = new Player();
-                this.gameState = 'playing';
+                //this.gameState = 'playing';
                 this.handlePlayerInput();
             }
 
@@ -123,7 +123,7 @@
                     // Get the starting position of the touch
                     startX = event.touches[0].clientX;
                     startY = event.touches[0].clientY;
-                });
+                }.bind(this));
 
                 // Add a touchmove event listener to the knob
                 knob.addEventListener("touchmove", function (event) {
@@ -167,7 +167,7 @@
                     directionX = 0;
                     directionY = 0;
                     this.player.currentState = this.player.states.IDLE;
-                });
+                }.bind(this));
 
             }
 
