@@ -137,23 +137,17 @@ body {
                     // Move the player based on the touch direction
                     if (Math.abs(directionX) > Math.abs(directionY)) {
                         if (directionX > 0) {
-                            this.player.body.position.x += this.player.speed;
-                            this.player.currentState = this.player.states.MOVE;
-                            this.player.currentDirection = 'right';
+                            this.input.left = true
                         } else {
-                            this.player.body.position.x -= this.player.speed;
-                            this.player.currentState = this.player.states.MOVE;
-                            this.player.currentDirection = 'left';
+                            this.input.right = true
                         }
                     } else {
                         if (directionY > 0) {
-                            this.player.body.position.z += this.player.speed;
-                            this.player.currentState = this.player.states.MOVE;
-                            this.player.currentDirection = 'down';
+                            this.input.up = true
+
                         } else {
-                            this.player.body.position.z -=this.player.speed;
-                            this.player.currentState = this.player.states.MOVE;
-                            this.player.currentDirection = 'up';
+                            this.input.down = true
+
                         }
                     }
                 });
@@ -162,6 +156,10 @@ body {
             // Add a touchend event listener to the knob
             knob.addEventListener("touchend", function (event) {
             // Reset the touch position variables
+
+
+
+
             startX = 0;
             startY = 0;
             moveX = 0;
