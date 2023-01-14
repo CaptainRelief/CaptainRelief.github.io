@@ -133,16 +133,15 @@
                     // Move the player based on the touch direction
                     if (Math.abs(directionX) > Math.abs(directionY)) {
                         if (directionX > 0) {
-                            this.input.left = true;
-                        } else {
                             this.input.right = true;
+                        } else {
+                            this.input.left = true; 
                         }
                     } else {
                         if (directionY > 0) {
-                            this.input.up = true;
-                        } else {
                             this.input.down = true;
-
+                        } else {
+                            this.input.up = true;              
                         }
                     }
                 }.bind(this));
