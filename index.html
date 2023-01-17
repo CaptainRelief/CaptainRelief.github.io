@@ -9,23 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta property="og:title" content="EBIN GEIMU">
-    <div id="touch-icon"></div>
     <style>
-        #touch-icon {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background-color: #ddd;
-            transition: all 0.2s;
-        }
-
-        #touch-icon:active {
-            transform: scale(0.9);
-        }
-
         body {
             width: 100%;
             height: 100%;
@@ -52,268 +36,203 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 
-        class GameManager {
+
+        class SpriteManager {
             constructor() {
-                this.player = new Player();
-                this.handlePlayerInput();
+                this.sprites = {}; // store all sprites in an object
+                this.spriteSheet = new THREE.TextureLoader().load("/png/player.png");
             }
 
-            handlePlayerInput() {
+            // function to load a sprite from the sprite sheet
+            loadSprite(name, x, y, w, h) {
+                var spriteMaterial = new THREE.SpriteMaterial({ transparent: true, map: this.spriteSheet });
+                var sprite = new THREE.Sprite(spriteMaterial);
+                sprite.scale.set(w, h, 1);
+                sprite.material.map.repeat.set(w, h);
+                sprite.material.map.offset.set(x, y);
+                this.sprites[name] = sprite;
+            }
+            updateSpriteFrame(name, x, y) {
+                var sprite = this.sprites[name];
+                sprite.material.map.offset.set(x, y);
+            }
+
+        }
+
+
+        class Player {
+            constructor(spriteManager) {
+                this.spriteManager = spriteManager;
+                this.states = {
+                    IDLE: "idle",
+                    MOVE: "move",
+                    ATTACK: "attack"
+                };
+                this.currentState = this.states.IDLE;
+
+                this.speed = 0.05;
+
+                // create player mesh
+                this.mesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.50, 2, 1),
+                    new THREE.MeshBasicMaterial({ transparent: true, color: 0x00ff00 })
+                );
+                this.mesh.material.opacity = 0;
+
+                this.mesh.position.y = 1.5;
+                this.mesh.position.x = 0;
+
+                // create player sprite
+                this.sprite = spriteManager.sprites["player"];
+                this.sprite.material.opacity = 1;
+                this.sprite.scale.set(1, 1, 1);
+
+                this.mesh.add(this.sprite);
+                this.sprite.material.map.repeat.set(64 / 832, 80 / 320);
+                this.directions = {
+                    down: 3,
+                    up: 2,
+                    left: 1,
+                    right: 0
+                };
+
+
+                this.currentDirection = 'down';
+                this.currentFrameX = 0; // first frame of the idle animation on the x-axis
+                this.currentFrameY = this.directions[this.currentDirection];
+                this.maxMoveFrame = 8;
+
+                this.lastFrameUpdate = Date.now(); // store the time of the last frame update
+                this.animationDelay = 100; // delay between frame updates, in milliseconds
+
+                // create player body
+                this.body = new CANNON.Body({
+                    mass: 1,
+                    position: new CANNON.Vec3(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z),
+                    shape: new CANNON.Box(new CANNON.Vec3(0.25, 0.5, 1))
+                });
+                // add the body to the physics world
+                world.addBody(this.body);
+
+
+
+            }
+
+
+
+            // Move player based on user input
+            update(input) {
+                if (input.left) {
+                    this.mesh.position.x -= this.speed;
+                    this.changeState(this.states.MOVE, 'left');
+                } else if (input.right) {
+                    this.mesh.position.x += this.speed;
+                    this.changeState(this.states.MOVE, 'right');
+                } else if (input.up) {
+                    this.mesh.position.z -= this.speed;
+                    this.changeState(this.states.MOVE, 'up');
+                } else if (input.down) {
+                    this.mesh.position.z += this.speed;
+                    this.changeState(this.states.MOVE, 'down');
+                } else {
+                    this.changeState(this.states.IDLE);
+                }
+
+            }
+
+            changeState(newState, direction = null) {
+                if (newState === this.states.MOVE && direction !== null) {
+                    this.currentDirection = direction;
+                    this.currentFrameY = this.directions[this.currentDirection];
+
+                }
+                if (newState !== this.currentState) {
+                    this.currentState = newState;
+                    if (newState === this.states.IDLE) {
+                        this.currentFrameX = 0;
+                    }
+                }
+            }
+
+            animate() {
+                if (this.currentState === this.states.MOVE) {
+
+                    if (Date.now() - this.lastFrameUpdate > this.animationDelay) {
+
+                        this.currentFrameX = (this.currentFrameX + 1) % this.maxMoveFrame;
+                        if (this.currentFrameX === 0) {
+                            this.currentFrameX = 1;
+                        }
+                        this.spriteManager.updateSpriteFrame("player", this.currentFrameX / 13, this.currentFrameY / 4);
+                        this.lastFrameUpdate = Date.now();
+
+                    }
+
+                }
+                if (this.currentState === this.states.IDLE) {
+                    this.currentFrameX = 0;
+                    this.spriteManager.updateSpriteFrame("player", this.currentFrameX / 13, this.currentFrameY / 4);
+
+
+
+                }
+            }
+        }
+
+        class GameManager {
+            constructor() {
+                this.spriteManager = new SpriteManager();
+                this.spriteManager.loadSprite("player", 0, 0, 0.1, 0.1); // load the player sprite from the sprite sheet
+                this.player = new Player(this.spriteManager);
                 this.input = {
                     left: false,
                     right: false,
                     up: false,
-                    down: false,
+                    down: false
                 };
+                this.handlePlayerInput();
+            }
+
+
+            handlePlayerInput() {
+                // Handle user input
                 document.addEventListener("keydown", event => {
                     if (event.keyCode === 37) this.input.left = true;
                     if (event.keyCode === 38) this.input.up = true;
                     if (event.keyCode === 39) this.input.right = true;
                     if (event.keyCode === 40) this.input.down = true;
-                    if (event.keyCode === 32) this.player.currentState = this.player.states.ATTACK;
                 });
                 document.addEventListener("keyup", event => {
                     if (event.keyCode === 37) this.input.left = false;
                     if (event.keyCode === 38) this.input.up = false;
                     if (event.keyCode === 39) this.input.right = false;
                     if (event.keyCode === 40) this.input.down = false;
-                    if (event.keyCode === 32) this.player.currentState = this.player.states.IDLE;
                 });
+
             }
 
             update() {
-                this.handlePlayerInput();
-                this.player.update();
-            }
-        }
-
-
-        class Player {
-            constructor() {
-                this.states = {
-                    IDLE: "idle",
-                    MOVE: "move",
-                    ATTACK: "attack"
-                };
-
-                this.animations = {
-                    IDLE: [0, 0],
-                    MOVE: [1, 8],
-                    ATTACK: [9, 12]
-                };
-
-                
-
-                this.currentAnimation = this.animations.IDLE;
-                this.currentState = this.states.IDLE;
-                this.currentFrame = this.currentAnimation[0];
-                this.speed = 0.2;
-
-                // create player mesh
-                this.mesh = new THREE.Mesh(
-                    new THREE.BoxGeometry(1, 1, 1),
-                    new THREE.MeshBasicMaterial({ transparent: true, color: 0x00ff00 })
-                );
-                this.mesh.material.opacity = 0;
-                this.mesh.position.set(1, 1, 1);
-                this.mesh.scale.set(0.2, 0.2, 0.2);
-                scene.add(this.mesh);
-
-
-                this.createSprite();
-
-                this.lastFrameUpdate = Date.now(); // store the time of the last frame update
-                this.animationDelay = 150; // delay between frame updates,
-
-
-                // create player body
-                this.body = new CANNON.Body({
-                    mass: 1,
-                    position: new CANNON.Vec3(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z),
-                    shape: new CANNON.Box(new CANNON.Vec3(0.2, 0.2, 0.2))
-                });
-                // add the body to the physics world
-                world.addBody(this.body);
-
-
-
-            }
-            createSprite() {
-
-                    var playerTexture = new THREE.TextureLoader().load('./png/player.png');
-                    var spriteMaterial = new THREE.SpriteMaterial({ transparent: true, map: playerTexture});
-                    spriteMaterial.map.needsUpdate = true;
-                    spriteMaterial.opacity = 1;
-                    this.sprite = new THREE.Sprite(spriteMaterial);
-                    this.sprite.position.set(0, 0.5, 0);
-                    this.sprite.scale.set(1, 1, 1);
-                    this.mesh.add(this.sprite);
-                    this.updateSprite();
-                    scene.add(this.sprite);
-                }
-            
-           
-
-
-            updateSprite() {
-
-                if (Date.now() - this.lastFrameUpdate > this.animationDelay) {
-                    this.lastFrameUpdate = Date.now();
-                    this.currentFrame++;
-                    if (this.currentFrame > this.currentAnimation[1]) {
-                        this.currentFrame = this.currentAnimation[0];
-                    }
-                }
-
-                // update the position of the sprite on the sprite sheet
-                var frameX = this.currentFrame % 13;
-                var frameY = Math.floor(this.currentFrame / 13);
-                this.sprite.material.map.offset.x = frameX / 13;
-                this.sprite.material.map.offset.y = 1 - (frameY + 1) / 13;
-                this.sprite.material.map.needsUpdate = true;
-
+                this.player.update(this.input);
+                this.player.animate();
             }
 
 
-            update() {
 
-                
-                this.updateSprite();
-
-                // Move player based on user input
-                if (gameManager.input.left) {
-                    this.body.position.x -= this.speed;
-                    this.currentState = this.states.MOVE;
-                    this.currentDirection = 'left';
-                }
-                if (gameManager.input.right) {
-                    this.body.position.x += this.speed;
-                    this.currentState = this.states.MOVE;
-                    this.currentDirection = 'right';
-
-                }
-                if (gameManager.input.up) {
-                    this.body.position.z -= this.speed;
-                    this.currentState = this.states.MOVE;
-                    this.currentDirection = 'up';
-
-                }
-                if (gameManager.input.down) {
-                    this.body.position.z += this.speed;
-                    this.currentState = this.states.MOVE;
-                    this.currentDirection = 'down';
-
-                }
-
-
-                // update the position of the mesh based on the position of the body
-                this.mesh.position.copy(this.body.position);
-                this.mesh.quaternion.copy(this.body.quaternion);
-
-                this.body.applyForce(world.gravity, this.body.position);
-
-                switch (this.currentState) {
-                    case this.states.IDLE:
-                        this.currentAnimation = this.animations.IDLE;
-                        break;
-                    case this.states.MOVE:
-                        this.currentAnimation = this.animations.MOVE;
-                        break;
-                    case this.states.ATTACK:
-                        this.currentAnimation = this.animations.ATTACK;
-                        break;
-                }
-
-
-
-                if (this.currentFrame < this.currentAnimation.endFrame) {
-                    this.currentFrame++;
-                } else {
-                    this.currentFrame = this.currentAnimation.startFrame;
-                }
-
-
-
-            }
-            
         }
 
 
 
-        class Enemy {
-            constructor() {
-                this.states = {
-                    IDLE: 'IDLE',
-                    CHASING: 'CHASING',
-                    ATTACKING: 'ATTACKING',
-                    DEAD: 'DEAD'
-                };
-                this.state = this.states.IDLE;
 
-                // create enemy mesh
-                this.mesh = new THREE.Mesh(
-                    new THREE.PlaneGeometry(1, 1),
-                    new THREE.MeshBasicMaterial({ transparent: true, color: 0xff0000 })
-                );
-                this.mesh.material.opacity = 0;
-
-                this.mesh.position.y = 0.75;
-                this.mesh.position.x = -2;
-
-                // create enemy sprite
-                var spriteMap = new THREE.TextureLoader().load("/png/enemy.png");
-                var spriteMaterial = new THREE.SpriteMaterial({ map: spriteMap });
-                this.sprite = new THREE.Sprite(spriteMaterial);
-                this.sprite.position.set(0, 0.5, 0);
-                this.sprite.scale.set(1, 1, 1);
-                this.mesh.add(this.sprite);
-
-                // create enemy body
-                this.body = new CANNON.Body({
-                    mass: 1,
-                    position: new CANNON.Vec3(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z),
-                    shape: new CANNON.Box(new CANNON.Vec3(0.2, 0.2, 0.2))
-                });
-                // add the body to the physics world
-                world.addBody(this.body);
-            }
-
-            update() {
-
-                this.mesh.position.copy(this.body.position);
-                this.mesh.quaternion.copy(this.body.quaternion);
-
-
-                switch (this.state) {
-                    case this.states.IDLE:
-
-                    case this.states.CHASING:
-                        // enemy is chasing the player
-                        break;
-                    case this.states.ATTACKING:
-                        // enemy is attacking the player
-                        break;
-                    case this.states.DEAD:
-                        // enemy is dead
-                        break;
-                    default:
-                        break;
-                }
-            }
-            setState(state) {
-                this.state = state;
-            }
-        }
 
 
 
         const scene = new THREE.Scene();
         //const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         const camera = new THREE.OrthographicCamera(
-            -window.innerWidth / 400,   // left
-            window.innerWidth / 400,    // right
-            window.innerHeight / 400,   // top
-            -window.innerHeight / 400,  // bottom
+            -window.innerWidth / 200,   // left
+            window.innerWidth / 200,    // right
+            window.innerHeight / 200,   // top
+            -window.innerHeight / 200,  // bottom
             0.1,          // near
             1000           // far
         );
@@ -343,6 +262,7 @@
 
 
 
+
         // Create a new world
         const world = new CANNON.World();
         world.gravity.set(0, -9.8, 0);
@@ -358,11 +278,7 @@
         world.addBody(groundBody);
 
         let gameManager = new GameManager();
-
-
-
-        const enemy = new Enemy();
-        scene.add(enemy.mesh);
+        scene.add(gameManager.player.mesh);
 
 
 
@@ -371,9 +287,6 @@
         // Render loop
         function render() {
 
-            enemy.update();
-
-            gameManager.player.update();
             gameManager.update();
 
             // Update the camera's position and rotation to match the player's position and rotation
