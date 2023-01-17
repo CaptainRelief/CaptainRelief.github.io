@@ -27,11 +27,11 @@
         }
 
         body {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-    }
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
     </style>
 </head>
 
@@ -55,150 +55,36 @@
         class GameManager {
             constructor() {
                 this.player = new Player();
-                //this.gameState = 'playing';
                 this.handlePlayerInput();
             }
 
-
             handlePlayerInput() {
-                // Handle user input
                 this.input = {
                     left: false,
                     right: false,
                     up: false,
-                    down: false
+                    down: false,
                 };
                 document.addEventListener("keydown", event => {
                     if (event.keyCode === 37) this.input.left = true;
                     if (event.keyCode === 38) this.input.up = true;
                     if (event.keyCode === 39) this.input.right = true;
                     if (event.keyCode === 40) this.input.down = true;
+                    if (event.keyCode === 32) this.player.currentState = this.player.states.ATTACK;
                 });
                 document.addEventListener("keyup", event => {
-                    if (event.keyCode === 37) {
-                        this.input.left = false;
-                        this.player.currentState = this.player.states.IDLE;
-
-                    }
-
-                    if (event.keyCode === 38) {
-                        this.input.up = false;
-                        this.player.currentState = this.player.states.IDLE;
-
-                    }
-
-                    if (event.keyCode === 39) {
-                        this.input.right = false;
-                        this.player.currentState = this.player.states.IDLE;
-
-                    }
-
-                    if (event.keyCode === 40) {
-                        this.input.down = false;
-                        this.player.currentState = this.player.states.IDLE;
-
-                    }
+                    if (event.keyCode === 37) this.input.left = false;
+                    if (event.keyCode === 38) this.input.up = false;
+                    if (event.keyCode === 39) this.input.right = false;
+                    if (event.keyCode === 40) this.input.down = false;
+                    if (event.keyCode === 32) this.player.currentState = this.player.states.IDLE;
                 });
-
-
-
-                // Get the knob element
-                const knob = document.getElementById("touch-icon");
-
-                // Initialize some variables to track the touch position
-                let startX = 0;
-                let startY = 0;
-                let moveX = 0;
-                let moveY = 0;
-                let directionX = 0;
-                let directionY = 0;
-
-                // Add a touchstart event listener to the knob
-                knob.addEventListener("touchstart", function (event) {
-                    // Get the starting position of the touch
-                    startX = event.touches[0].clientX;
-                    startY = event.touches[0].clientY;
-                }.bind(this));
-
-                // Add a touchmove event listener to the knob
-                knob.addEventListener("touchmove", function (event) {
-                    // Get the current position of the touch
-                    moveX = event.touches[0].clientX;
-                    moveY = event.touches[0].clientY;
-
-                    // Calculate the direction of the touch movement
-                    directionX = moveX - startX;
-                    directionY = moveY - startY;
-
-                    // Move the player based on the touch direction
-                    if (Math.abs(directionX) > Math.abs(directionY)) {
-                        if (directionX > 0) {
-                            this.input.right = true;
-                        } else {
-                            this.input.left = true; 
-                        }
-                    } else {
-                        if (directionY > 0) {
-                            this.input.down = true;
-                        } else {
-                            this.input.up = true;              
-                        }
-                    }
-                }.bind(this));
-
-
-                // Add a touchend event listener to the knob
-                knob.addEventListener("touchend", function (event) {
-                    // Reset the touch position variables
-
-
-                    this.input.left = false;
-                    this.input.right = false;
-                    this.input.up = false;
-                    this.input.down = false;
-
-                    startX = 0;
-                    startY = 0;
-                    moveX = 0;
-                    moveY = 0;
-                    directionX = 0;
-                    directionY = 0;
-                    this.player.currentState = this.player.states.IDLE;
-                }.bind(this));
-
-            }
-
-            spawnEnemies() {
-                // code to spawn enemies
-            }
-
-            checkCollisions() {
-                // code to check for collisions
-            }
-
-            showGameOverScreen() {
-                // code to show the game over screen
-            }
-
-            showWinScreen() {
-                // code to show the win screen
             }
 
             update() {
-
-                /*  if (this.gameState === 'playing') {
-                      this.handlePlayerInput();
-                      this.spawnEnemies();
-                      this.checkCollisions();
-                  } else if (this.gameState === 'gameover') {
-                      this.showGameOverScreen();
-                  } else if (this.gameState === 'win') {
-                      this.showWinScreen();
-                  }
-                  
-                  */
+                this.handlePlayerInput();
+                this.player.update();
             }
-
         }
 
 
@@ -209,52 +95,36 @@
                     MOVE: "move",
                     ATTACK: "attack"
                 };
-                this.currentState = this.states.IDLE;
 
-                this.speed = 0.05;
+                this.animations = {
+                    IDLE: [0, 0],
+                    MOVE: [1, 8],
+                    ATTACK: [9, 12]
+                };
+
+                
+
+                this.currentAnimation = this.animations.IDLE;
+                this.currentState = this.states.IDLE;
+                this.currentFrame = this.currentAnimation[0];
+                this.speed = 0.2;
 
                 // create player mesh
                 this.mesh = new THREE.Mesh(
-                    new THREE.PlaneGeometry(1, 1),
+                    new THREE.BoxGeometry(1, 1, 1),
                     new THREE.MeshBasicMaterial({ transparent: true, color: 0x00ff00 })
                 );
                 this.mesh.material.opacity = 0;
-
-                this.mesh.position.y = 0.75;
-                this.mesh.position.x = 2;
-
-                // create player sprite
-                var spriteMap = new THREE.TextureLoader().load("/png/player.png");
-                var spriteMaterial = new THREE.SpriteMaterial({ map: spriteMap });
-                this.sprite = new THREE.Sprite(spriteMaterial);
-                this.sprite.position.set(0, 0.5, 0);
-                this.sprite.scale.set(1, 1, 1);
-                this.mesh.add(this.sprite);
+                this.mesh.position.set(1, 1, 1);
+                this.mesh.scale.set(0.2, 0.2, 0.2);
+                scene.add(this.mesh);
 
 
-                this.directions = {
-                    down: 3,
-                    up: 2,
-                    left: 1,
-                    right: 0
-                };
-
-
-                this.currentDirection = 'down';
-                this.currentFrameX = 0; // first frame of the idle animation on the x-axis
-                this.currentFrameY = this.directions[this.currentDirection];
-                this.maxMoveFrame = 8;
-
-                const spriteSheetWidth = 832;
-                const spriteSheetHeight = 320;
-                const frameWidth = spriteSheetWidth / 13;
-                const frameHeight = spriteSheetHeight / 4;
-                this.sprite.material.map.repeat.set(frameWidth / spriteSheetWidth, frameHeight / spriteSheetHeight);
-                this.sprite.material.map.offset.set(this.currentFrameX / 13, this.currentFrameY / 4);
-
+                this.createSprite();
 
                 this.lastFrameUpdate = Date.now(); // store the time of the last frame update
-                this.animationDelay = 100; // delay between frame updates, in milliseconds
+                this.animationDelay = 150; // delay between frame updates,
+
 
                 // create player body
                 this.body = new CANNON.Body({
@@ -268,10 +138,47 @@
 
 
             }
+            createSprite() {
+
+                    var playerTexture = new THREE.TextureLoader().load('./png/player.png');
+                    var spriteMaterial = new THREE.SpriteMaterial({ transparent: true, map: playerTexture});
+                    spriteMaterial.map.needsUpdate = true;
+                    spriteMaterial.opacity = 1;
+                    this.sprite = new THREE.Sprite(spriteMaterial);
+                    this.sprite.position.set(0, 0.5, 0);
+                    this.sprite.scale.set(1, 1, 1);
+                    this.mesh.add(this.sprite);
+                    this.updateSprite();
+                    scene.add(this.sprite);
+                }
+            
+           
+
+
+            updateSprite() {
+
+                if (Date.now() - this.lastFrameUpdate > this.animationDelay) {
+                    this.lastFrameUpdate = Date.now();
+                    this.currentFrame++;
+                    if (this.currentFrame > this.currentAnimation[1]) {
+                        this.currentFrame = this.currentAnimation[0];
+                    }
+                }
+
+                // update the position of the sprite on the sprite sheet
+                var frameX = this.currentFrame % 13;
+                var frameY = Math.floor(this.currentFrame / 13);
+                this.sprite.material.map.offset.x = frameX / 13;
+                this.sprite.material.map.offset.y = 1 - (frameY + 1) / 13;
+                this.sprite.material.map.needsUpdate = true;
+
+            }
+
 
             update() {
 
-
+                
+                this.updateSprite();
 
                 // Move player based on user input
                 if (gameManager.input.left) {
@@ -307,33 +214,30 @@
 
                 switch (this.currentState) {
                     case this.states.IDLE:
-                        this.currentFrameX = 0;
-                        this.sprite.material.map.offset.set(this.currentFrameX / 13, this.currentFrameY / 4);
-                        this.sprite.material.map.needsUpdate = true;
+                        this.currentAnimation = this.animations.IDLE;
                         break;
                     case this.states.MOVE:
-                        if (Date.now() - this.lastFrameUpdate > this.animationDelay) {
-                            // update the frame of the animation
-                            this.currentFrameX = (this.currentFrameX + 1) % this.maxMoveFrame;
-                            if (this.currentFrameX > 12) {
-                                this.currentFrameX = 0;
-                            }
-                            this.currentFrameY = this.directions[this.currentDirection];
-
-                            this.sprite.material.map.offset.set(this.currentFrameX / 13, this.currentFrameY / 4);
-                            this.sprite.material.map.needsUpdate = true;
-                            this.lastFrameUpdate = Date.now();
-                        }
+                        this.currentAnimation = this.animations.MOVE;
                         break;
                     case this.states.ATTACK:
-
-                        break;
-                    default:
-
+                        this.currentAnimation = this.animations.ATTACK;
                         break;
                 }
+
+
+
+                if (this.currentFrame < this.currentAnimation.endFrame) {
+                    this.currentFrame++;
+                } else {
+                    this.currentFrame = this.currentAnimation.startFrame;
+                }
+
+
+
             }
+            
         }
+
 
 
         class Enemy {
@@ -403,7 +307,6 @@
 
 
 
-
         const scene = new THREE.Scene();
         //const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         const camera = new THREE.OrthographicCamera(
@@ -439,24 +342,6 @@
         scene.add(ground);
 
 
-        // Tree
-        const treeGeometry = new THREE.PlaneGeometry(1, 1);
-        const treeMaterial = new THREE.MeshBasicMaterial({ transparent: true, color: 0xff0000 });
-        treeMaterial.opacity = 0;
-        const tree = new THREE.Mesh(treeGeometry, treeMaterial);
-        scene.add(tree);
-
-        const treeSpriteMap = new THREE.TextureLoader().load("/png/tree.png");
-        const treeSpriteMaterial = new THREE.SpriteMaterial({ map: treeSpriteMap });
-        const treeSprite = new THREE.Sprite(treeSpriteMaterial);
-        treeSprite.position.set(0, 1, -0.4);
-        treeSprite.scale.set(4, 4, 1);
-        tree.add(treeSprite);
-
-        const treeShape = new CANNON.Box(new CANNON.Vec3(0.6, 4, 0.3));
-        const treeBody = new CANNON.Body({ mass: 0, shape: treeShape });
-        treeBody.position.set(0, 0.4, 0.4);
-        tree.position.copy(treeBody.position);
 
         // Create a new world
         const world = new CANNON.World();
@@ -471,10 +356,11 @@
         //gridHelper.quaternion.copy(groundBody.quaternion);
 
         world.addBody(groundBody);
-        world.addBody(treeBody);
 
         let gameManager = new GameManager();
-        scene.add(gameManager.player.mesh);
+
+
+
         const enemy = new Enemy();
         scene.add(enemy.mesh);
 
