@@ -40,13 +40,21 @@
         class SpriteManager {
             constructor() {
                 this.sprites = {}; // store all sprites in an object
-                this.spriteSheet = new THREE.TextureLoader().load("/png/player.png");
+                this.playerSheet = new THREE.TextureLoader().load("/png/player.png");
+                this.zombieSheet = new THREE.TextureLoader().load("/png/zombieSheet.png");
             }
 
             // function to load a sprite from the sprite sheet
             loadSprite(name, x, y, w, h) {
-                var spriteMaterial = new THREE.SpriteMaterial({ transparent: true, map: this.spriteSheet });
-                var sprite = new THREE.Sprite(spriteMaterial);
+
+                if (name === "player") {
+                    this.spriteMaterial = new THREE.SpriteMaterial({ transparent: true, map: this.playerSheet });
+                } else if (name === "zombie") {
+                    this.spriteMaterial = new THREE.SpriteMaterial({ transparent: true, map: this.zombieSheet });
+                }
+
+
+                var sprite = new THREE.Sprite(this.spriteMaterial);
                 sprite.scale.set(w, h, 1);
                 sprite.material.map.repeat.set(w, h);
                 sprite.material.map.offset.set(x, y);
@@ -74,14 +82,14 @@
 
                 // create player mesh
                 this.mesh = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.50, 2, 1),
+                    new THREE.BoxGeometry(0.50, 0.8, 1),
                     new THREE.MeshBasicMaterial({ transparent: true, color: 0x00ff00 })
                 );
-                this.mesh.material.opacity = 0;
+                this.mesh.material.opacity = 0.1;
 
-                this.mesh.position.y = 1.5;
+                this.mesh.position.y = 1;
                 this.mesh.position.x = 0;
-
+                scene.add(this.mesh);
                 // create player sprite
                 this.sprite = spriteManager.sprites["player"];
                 this.sprite.material.opacity = 1;
@@ -100,7 +108,12 @@
                 this.currentDirection = 'down';
                 this.currentFrameX = 0; // first frame of the idle animation on the x-axis
                 this.currentFrameY = this.directions[this.currentDirection];
-                this.maxMoveFrame = 8;
+
+
+                this.maxIdleFrame = 0;
+                this.maxMoveFrame = 7;
+                this.maxAttackFrame = 12;
+
 
                 this.lastFrameUpdate = Date.now(); // store the time of the last frame update
                 this.animationDelay = 100; // delay between frame updates, in milliseconds
@@ -116,6 +129,39 @@
 
 
 
+
+            }
+
+            startAttack() {
+
+
+                if (this.currentState !== this.states.ATTACK) {
+                    this.currentFrameX = 8; // set the current frame to 8 when entering attack state for the first time
+                }
+                this.attackTimer = setTimeout(() => {
+                    this.mesh.remove(hitboxMesh);
+                }, 500); // attack lasts for 500 milliseconds
+
+
+
+                // spawn hitbox
+                let hitboxSize = 0.5;
+                let hitboxMesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(hitboxSize, hitboxSize, hitboxSize),
+                    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.1, color: 0xff0000 })
+                );
+
+                this.mesh.add(hitboxMesh);
+                let hitboxPos = {
+                    'left': new THREE.Vector3(-0.5, 0, 0),
+                    'right': new THREE.Vector3(0.5, 0, 0),
+                    'up': new THREE.Vector3(0, 0, -0.5),
+                    'down': new THREE.Vector3(0, 0, 0.5)
+                };
+                hitboxMesh.position.set(hitboxPos[this.currentDirection].x, hitboxPos[this.currentDirection].y, hitboxPos[this.currentDirection].z);
+
+
+
             }
 
 
@@ -123,72 +169,94 @@
             // Move player based on user input
             update(input) {
                 if (input.left) {
-                    this.mesh.position.x -= this.speed;
+                    this.body.position.x -= this.speed;
                     this.changeState(this.states.MOVE, 'left');
                 } else if (input.right) {
-                    this.mesh.position.x += this.speed;
+                    this.body.position.x += this.speed;
                     this.changeState(this.states.MOVE, 'right');
                 } else if (input.up) {
-                    this.mesh.position.z -= this.speed;
+                    this.body.position.z -= this.speed;
                     this.changeState(this.states.MOVE, 'up');
                 } else if (input.down) {
-                    this.mesh.position.z += this.speed;
+                    this.body.position.z += this.speed;
                     this.changeState(this.states.MOVE, 'down');
+                } else if (input.attack) {
+                    this.startAttack();
+                    this.changeState(this.states.ATTACK);
                 } else {
                     this.changeState(this.states.IDLE);
                 }
 
+                this.mesh.position.set(this.body.position.x, this.body.position.y, this.body.position.z);
             }
+
 
             changeState(newState, direction = null) {
                 if (newState === this.states.MOVE && direction !== null) {
                     this.currentDirection = direction;
                     this.currentFrameY = this.directions[this.currentDirection];
 
+                } else if (newState === this.states.IDLE && direction !== null) {
+                    this.currentDirection = direction;
+                    this.currentFrameY = this.directions[this.currentDirection];
+
+                } else if (newState === this.states.ATTACK && direction !== null) {
+                    this.currentDirection = direction;
+                    this.currentFrameY = this.directions[this.currentDirection];
+
                 }
-                if (newState !== this.currentState) {
-                    this.currentState = newState;
-                    if (newState === this.states.IDLE) {
-                        this.currentFrameX = 0;
-                    }
-                }
+                this.currentState = newState;
+
             }
 
             animate() {
-                if (this.currentState === this.states.MOVE) {
+                let now = Date.now();
+                if (now - this.lastFrameUpdate > this.animationDelay) {
+                    // update the sprite frame
+                    switch (this.currentState) {
+                        case this.states.IDLE:
+                            if (this.currentFrameX < this.maxIdleFrame) {
+                                this.currentFrameX++;
 
-                    if (Date.now() - this.lastFrameUpdate > this.animationDelay) {
 
-                        this.currentFrameX = (this.currentFrameX + 1) % this.maxMoveFrame;
-                        if (this.currentFrameX === 0) {
-                            this.currentFrameX = 1;
-                        }
-                        this.spriteManager.updateSpriteFrame("player", this.currentFrameX / 13, this.currentFrameY / 4);
-                        this.lastFrameUpdate = Date.now();
-
+                            } else {
+                                this.currentFrameX = 0;
+                            }
+                            break;
+                        case this.states.MOVE:
+                            if (this.currentFrameX < this.maxMoveFrame) {
+                                this.currentFrameX++;
+                            } else {
+                                this.currentFrameX = 1;
+                            }
+                            break;
+                        case this.states.ATTACK:
+                            if (this.currentFrameX < this.maxAttackFrame) {
+                                this.currentFrameX++;
+                            } else {
+                                this.currentFrameX = 7; // set the current frame back to 8 after the attack animation is finished
+                            }
+                            break;
                     }
-
-                }
-                if (this.currentState === this.states.IDLE) {
-                    this.currentFrameX = 0;
                     this.spriteManager.updateSpriteFrame("player", this.currentFrameX / 13, this.currentFrameY / 4);
-
-
-
+                    this.lastFrameUpdate = now;
                 }
             }
         }
+
 
         class GameManager {
             constructor() {
                 this.spriteManager = new SpriteManager();
                 this.spriteManager.loadSprite("player", 0, 0, 0.1, 0.1); // load the player sprite from the sprite sheet
                 this.player = new Player(this.spriteManager);
+
                 this.input = {
                     left: false,
                     right: false,
                     up: false,
-                    down: false
+                    down: false,
+                    attack: false
                 };
                 this.handlePlayerInput();
             }
@@ -201,12 +269,14 @@
                     if (event.keyCode === 38) this.input.up = true;
                     if (event.keyCode === 39) this.input.right = true;
                     if (event.keyCode === 40) this.input.down = true;
+                    if (event.keyCode === 90) this.input.attack = true;
                 });
                 document.addEventListener("keyup", event => {
                     if (event.keyCode === 37) this.input.left = false;
                     if (event.keyCode === 38) this.input.up = false;
                     if (event.keyCode === 39) this.input.right = false;
                     if (event.keyCode === 40) this.input.down = false;
+                    if (event.keyCode === 90) this.input.attack = false;
                 });
 
             }
@@ -214,6 +284,7 @@
             update() {
                 this.player.update(this.input);
                 this.player.animate();
+                this.player.body.applyForce(world.gravity, this.player.body.position);
             }
 
 
@@ -221,21 +292,134 @@
         }
 
 
+        class Zombie {
+            constructor() {
+                this.states = {
+                    IDLE: 'IDLE',
+                    CHASING: 'CHASING',
+                    ATTACKING: 'ATTACKING',
+                    DEAD: 'DEAD'
+                };
+                this.state = this.states.IDLE;
+
+                this.spriteManager = new SpriteManager();
+                this.spriteManager.loadSprite("zombie", 0, 0, 0.1, 0.1);
+                this.sprite = this.spriteManager.sprites["zombie"];
+                this.sprite.material.map.repeat.set(80 / 920, 80 / 240);
+                this.sprite.scale.set(1, 1, 1);
 
 
+                this.currentFrameX = 0; // current frame of the animation on the x-axis
+                this.currentFrameY = 2; // current frame of the animation on the y-axis
+                this.maxIdleFrame = 3; // maximum number of frames in the idle animation
+                this.maxMoveFrame = 3; // maximum number of frames in the move animation
+                this.maxAttackFrame = 3; // maximum number of frames in the attack animation
+                this.lastFrameUpdate = Date.now(); // store the time of the last frame update
+                this.animationDelay = 120; // delay between frame updates, in milliseconds
 
+
+                // create enemy mesh
+                this.mesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.5, 0.5, 0.5),
+                    new THREE.MeshBasicMaterial({ transparent: true, color: 0xff0000 })
+                );
+                this.mesh.material.opacity = 0.1;
+                
+                this.mesh.position.y = 1;
+                this.mesh.position.x = -2;
+                this.mesh.add(this.sprite);
+        
+                scene.add(this.mesh);
+                // create enemy body
+                this.body = new CANNON.Body({
+                    mass: 1,
+                    position: new CANNON.Vec3(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z),
+                    shape: new CANNON.Box(new CANNON.Vec3(0.25, 0.25, 0.25))
+                });
+                // add the body to the physics world
+                world.addBody(this.body);
+            }
+
+            animate() {
+                let currentTime = Date.now();
+                if (currentTime - this.lastFrameUpdate > this.animationDelay) {
+                    this.lastFrameUpdate = currentTime;
+                    this.currentFrameX++;
+                    if (this.state === this.states.IDLE && this.currentFrameX > this.maxIdleFrame) {
+                        this.currentFrameX = 0;
+                    } else if (this.state === this.states.CHASING && this.currentFrameX > this.maxMoveFrame) {
+                        this.currentFrameX = 0;
+                    } else if (this.state === this.states.ATTACKING && this.currentFrameX > this.maxAttackFrame) {
+                        this.currentFrameX = 0;
+                    
+                    } else if (this.state === this.states.DEAD && this.currentFrameX > this.maxAttackFrame) {
+                        this.currentFrameX = 0;
+                    }
+                    this.spriteManager.updateSpriteFrame("zombie", this.currentFrameX / 12, this.currentFrameY / 3);
+                }
+            }
+            update() {
+
+                this.mesh.position.copy(this.body.position);
+                this.mesh.quaternion.copy(this.body.quaternion);
+                this.body.applyForce(world.gravity, this.body.position);
+                this.animate();
+
+
+                switch (this.state) {
+                    case this.states.IDLE:
+
+                    case this.states.CHASING:
+                        // enemy is chasing the player
+                        break;
+                    case this.states.ATTACKING:
+                        // enemy is attacking the player
+                        break;
+                    case this.states.DEAD:
+                        // enemy is dead
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+        }
+
+
+        class Tree {
+            constructor() {
+                const treeGeometry = new THREE.PlaneGeometry(1, 1);
+                const treeMaterial = new THREE.MeshBasicMaterial({ transparent: true, color: 0xff0000 });
+                treeMaterial.opacity = 0;
+                const tree = new THREE.Mesh(treeGeometry, treeMaterial);
+                scene.add(tree);
+
+                const treeSpriteMap = new THREE.TextureLoader().load("/png/tree.png");
+                const treeSpriteMaterial = new THREE.SpriteMaterial({ map: treeSpriteMap });
+                const treeSprite = new THREE.Sprite(treeSpriteMaterial);
+                treeSprite.position.set(0, 1, 0);
+                treeSprite.scale.set(4, 4, 1);
+                tree.add(treeSprite);
+
+                const treeShape = new CANNON.Box(new CANNON.Vec3(0.6, 4, 0.3));
+                const treeBody = new CANNON.Body({ mass: 0, shape: treeShape });
+                treeBody.position.set(0, 0.4, 0.4);
+                tree.position.copy(treeBody.position);
+                world.addBody(treeBody);
+            }
+        }
 
 
         const scene = new THREE.Scene();
-        //const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const camera = new THREE.OrthographicCamera(
-            -window.innerWidth / 200,   // left
-            window.innerWidth / 200,    // right
-            window.innerHeight / 200,   // top
-            -window.innerHeight / 200,  // bottom
-            0.1,          // near
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        /*const camera = new THREE.OrthographicCamera(
+            -window.innerWidth / 100,   // left
+            window.innerWidth / 100,    // right
+            window.innerHeight / 100,   // top
+            -window.innerHeight / 100,  // bottom
+            1,          // near
             1000           // far
-        );
+        );*/
 
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -246,7 +430,10 @@
         const light = new THREE.AmbientLight(0x404040);
         scene.add(light);
 
-        const size = 10;
+
+
+
+        const size = 100;
         const divisions = 10;
         const gridHelper = new THREE.GridHelper(size, divisions);
         scene.add(gridHelper);
@@ -256,7 +443,7 @@
 
         // Create the material for the ground body
         const groundMaterial = new THREE.MeshBasicMaterial({ map: groundTexture });
-        const groundGeometry = new THREE.BoxGeometry(10, 1, 10);
+        const groundGeometry = new THREE.BoxGeometry(size, 1, size);
         const ground = new THREE.Mesh(groundGeometry, groundMaterial);
         scene.add(ground);
 
@@ -267,7 +454,7 @@
         const world = new CANNON.World();
         world.gravity.set(0, -9.8, 0);
         const shape = new CANNON.Box(new CANNON.Vec3(1, 1, 1));
-        const groundShape = new CANNON.Box(new CANNON.Vec3(10, 10, 1));
+        const groundShape = new CANNON.Box(new CANNON.Vec3(size, size, 1));
         // Create Cannon.js bodies for the meshes
         const groundBody = new CANNON.Body({ mass: 0, shape: groundShape });
         groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 1, 1), -Math.PI / 2);
@@ -278,27 +465,29 @@
         world.addBody(groundBody);
 
         let gameManager = new GameManager();
-        scene.add(gameManager.player.mesh);
 
-
-
+        const zombie = new Zombie();
+        
+        const tree = new Tree();
 
 
         // Render loop
         function render() {
 
+
+            zombie.update();
             gameManager.update();
 
             // Update the camera's position and rotation to match the player's position and rotation
             camera.position.x = gameManager.player.mesh.position.x;
-            camera.position.z = gameManager.player.mesh.position.z + 3;
-            camera.position.y = gameManager.player.mesh.position.y + 5;
+            camera.position.z = gameManager.player.mesh.position.z + 10;
+            camera.position.y = gameManager.player.mesh.position.y + 4;
             camera.lookAt(gameManager.player.mesh.position);
 
             // Keep isometric angle
-            camera.rotation.x = -1;
-            camera.rotation.y = 0;
-            camera.rotation.z = 0;
+            camera.rotation.x;
+            camera.rotation.y;
+            camera.rotation.z;
 
             // Step the physics simulation
             world.step(1 / 60);
