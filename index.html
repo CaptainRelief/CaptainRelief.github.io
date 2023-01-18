@@ -37,12 +37,18 @@
 
 
 
+        function lerp(start, end, t) {
+            return (1 - t) * start + t * end;
+        }
+
+
         class SpriteManager {
             constructor() {
                 this.sprites = {}; // store all sprites in an object
                 this.playerSheet = new THREE.TextureLoader().load("/png/player.png");
                 this.zombieSheet = new THREE.TextureLoader().load("/png/zombieSheet.png");
             }
+
 
             // function to load a sprite from the sprite sheet
             loadSprite(name, x, y, w, h) {
@@ -77,8 +83,8 @@
                     ATTACK: "attack"
                 };
                 this.currentState = this.states.IDLE;
-
-                this.speed = 0.05;
+                this.isHitboxActive = false;
+                this.speed = 0.002;
 
                 // create player mesh
                 this.mesh = new THREE.Mesh(
@@ -88,7 +94,7 @@
                 this.mesh.material.opacity = 0.1;
 
                 this.mesh.position.y = 1;
-                this.mesh.position.x = 0;
+                this.mesh.position.x = 1;
                 scene.add(this.mesh);
                 // create player sprite
                 this.sprite = spriteManager.sprites["player"];
@@ -120,10 +126,15 @@
 
                 // create player body
                 this.body = new CANNON.Body({
-                    mass: 1,
+                    mass: 100,
                     position: new CANNON.Vec3(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z),
-                    shape: new CANNON.Box(new CANNON.Vec3(0.25, 0.5, 1))
+                    shape: new CANNON.Box(new CANNON.Vec3(0.25, 0.5, 1)),
+                    fixedRotation: true,
                 });
+
+
+
+
                 // add the body to the physics world
                 world.addBody(this.body);
 
@@ -138,56 +149,90 @@
                 if (this.currentState !== this.states.ATTACK) {
                     this.currentFrameX = 8; // set the current frame to 8 when entering attack state for the first time
                 }
-                this.attackTimer = setTimeout(() => {
-                    this.mesh.remove(hitboxMesh);
-                }, 500); // attack lasts for 500 milliseconds
 
+                if (this.isHitboxActive) {
+                    return; // do not create a new hitbox if one is already active
+                }
+
+                this.isHitboxActive = true;
+
+                this.attackTimer = setTimeout(() => {
+                    this.mesh.remove(this.hitboxMesh);
+                    world.removeBody(this.hitboxBody);
+                    this.isHitboxActive = false;
+                }, 500);
 
 
                 // spawn hitbox
                 let hitboxSize = 0.5;
-                let hitboxMesh = new THREE.Mesh(
+                this.hitboxMesh = new THREE.Mesh(
                     new THREE.BoxGeometry(hitboxSize, hitboxSize, hitboxSize),
                     new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.1, color: 0xff0000 })
                 );
 
-                this.mesh.add(hitboxMesh);
+                this.mesh.add(this.hitboxMesh);
                 let hitboxPos = {
                     'left': new THREE.Vector3(-0.5, 0, 0),
                     'right': new THREE.Vector3(0.5, 0, 0),
                     'up': new THREE.Vector3(0, 0, -0.5),
                     'down': new THREE.Vector3(0, 0, 0.5)
                 };
-                hitboxMesh.position.set(hitboxPos[this.currentDirection].x, hitboxPos[this.currentDirection].y, hitboxPos[this.currentDirection].z);
+
+                this.hitboxMesh.position.set(hitboxPos[this.currentDirection].x, hitboxPos[this.currentDirection].y, hitboxPos[this.currentDirection].z);
+
+                this.hitboxShape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5));
+                this.hitboxBody = new CANNON.Body({
+                    mass: 0,
+                    position: new CANNON.Vec3(this.hitboxMesh.position.x, this.hitboxMesh.position.y, this.hitboxMesh.position.z)
+
+                });
+
+                this.hitboxBody.addShape(this.hitboxShape);
 
 
+                world.addBody(this.hitboxBody);
 
             }
 
 
 
+
+
             // Move player based on user input
-            update(input) {
-                if (input.left) {
-                    this.body.position.x -= this.speed;
+            update() {
+                let targetX;
+               
+
+                if (gameManager.input.left) {
+                    targetX = this.body.position.x - this.speed;
+                    this.body.position.x = lerp(this.body.position.x, targetX, 0.05);
                     this.changeState(this.states.MOVE, 'left');
-                } else if (input.right) {
-                    this.body.position.x += this.speed;
+                } else if (gameManager.input.right) {
+                    targetX = this.body.position.x + this.speed;
+                    this.body.position.x = lerp(this.body.position.x, targetX, 0.05);
                     this.changeState(this.states.MOVE, 'right');
-                } else if (input.up) {
-                    this.body.position.z -= this.speed;
+                } else if (gameManager.input.up) {
+                    targetX = this.body.position.z - this.speed;
+                    this.body.position.z = lerp(this.body.position.z, targetX, 0.05);
                     this.changeState(this.states.MOVE, 'up');
-                } else if (input.down) {
-                    this.body.position.z += this.speed;
+                } else if (gameManager.input.down) {
+                    targetX = this.body.position.z + this.speed;
+                    this.body.position.z = lerp(this.body.position.z, targetX, 0.05);
                     this.changeState(this.states.MOVE, 'down');
-                } else if (input.attack) {
+                } else if (gameManager.input.attack) {
                     this.startAttack();
                     this.changeState(this.states.ATTACK);
                 } else {
                     this.changeState(this.states.IDLE);
                 }
 
+
+                camera.position.x = gameManager.player.mesh.position.x;
+                camera.position.z = gameManager.player.mesh.position.z + 5;
+                camera.position.y = gameManager.player.mesh.position.y + 5;
+
                 this.mesh.position.set(this.body.position.x, this.body.position.y, this.body.position.z);
+                this.animate();
             }
 
 
@@ -250,7 +295,7 @@
                 this.spriteManager = new SpriteManager();
                 this.spriteManager.loadSprite("player", 0, 0, 0.1, 0.1); // load the player sprite from the sprite sheet
                 this.player = new Player(this.spriteManager);
-
+                this.zombie = new Zombie();
                 this.input = {
                     left: false,
                     right: false,
@@ -258,7 +303,14 @@
                     down: false,
                     attack: false
                 };
+
+
+
+
+
+
                 this.handlePlayerInput();
+
             }
 
 
@@ -281,16 +333,24 @@
 
             }
 
+
             update() {
+
+
+
                 this.player.update(this.input);
-                this.player.animate();
-                this.player.body.applyForce(world.gravity, this.player.body.position);
+                this.zombie.update();
+
+
+
+
+                // Request next update
+                requestAnimationFrame(this.update.bind(this));
+
             }
 
 
-
         }
-
 
         class Zombie {
             constructor() {
@@ -301,6 +361,8 @@
                     DEAD: 'DEAD'
                 };
                 this.state = this.states.IDLE;
+
+                this.health = 30;
 
                 this.spriteManager = new SpriteManager();
                 this.spriteManager.loadSprite("zombie", 0, 0, 0.1, 0.1);
@@ -314,8 +376,11 @@
                 this.maxIdleFrame = 3; // maximum number of frames in the idle animation
                 this.maxMoveFrame = 3; // maximum number of frames in the move animation
                 this.maxAttackFrame = 3; // maximum number of frames in the attack animation
+                this.maxDeadFrame = 12;
                 this.lastFrameUpdate = Date.now(); // store the time of the last frame update
                 this.animationDelay = 120; // delay between frame updates, in milliseconds
+
+
 
 
                 // create enemy mesh
@@ -324,20 +389,30 @@
                     new THREE.MeshBasicMaterial({ transparent: true, color: 0xff0000 })
                 );
                 this.mesh.material.opacity = 0.1;
-                
+
                 this.mesh.position.y = 1;
                 this.mesh.position.x = -2;
                 this.mesh.add(this.sprite);
-        
+
                 scene.add(this.mesh);
                 // create enemy body
                 this.body = new CANNON.Body({
-                    mass: 1,
+                    mass: 90,
                     position: new CANNON.Vec3(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z),
-                    shape: new CANNON.Box(new CANNON.Vec3(0.25, 0.25, 0.25))
+                    shape: new CANNON.Box(new CANNON.Vec3(0.25, 0.25, 0.25)),
+                    fixedRotation: true
                 });
+                
                 // add the body to the physics world
                 world.addBody(this.body);
+            }
+
+            applyDamage(damage) {
+                this.health -= damage;
+            }
+
+            isDead() {
+                return this.health <= 0;
             }
 
             animate() {
@@ -351,9 +426,11 @@
                         this.currentFrameX = 0;
                     } else if (this.state === this.states.ATTACKING && this.currentFrameX > this.maxAttackFrame) {
                         this.currentFrameX = 0;
-                    
-                    } else if (this.state === this.states.DEAD && this.currentFrameX > this.maxAttackFrame) {
+
+                    } else if (this.state === this.states.DEAD) {
+                        this.currentFrameY = 1;
                         this.currentFrameX = 0;
+
                     }
                     this.spriteManager.updateSpriteFrame("zombie", this.currentFrameX / 12, this.currentFrameY / 3);
                 }
@@ -362,10 +439,7 @@
 
                 this.mesh.position.copy(this.body.position);
                 this.mesh.quaternion.copy(this.body.quaternion);
-                this.body.applyForce(world.gravity, this.body.position);
                 this.animate();
-
-
                 switch (this.state) {
                     case this.states.IDLE:
 
@@ -453,7 +527,7 @@
         // Create a new world
         const world = new CANNON.World();
         world.gravity.set(0, -9.8, 0);
-        const shape = new CANNON.Box(new CANNON.Vec3(1, 1, 1));
+        //const shape = new CANNON.Box(new CANNON.Vec3(1, 1, 1));
         const groundShape = new CANNON.Box(new CANNON.Vec3(size, size, 1));
         // Create Cannon.js bodies for the meshes
         const groundBody = new CANNON.Body({ mass: 0, shape: groundShape });
@@ -466,36 +540,34 @@
 
         let gameManager = new GameManager();
 
-        const zombie = new Zombie();
-        
         const tree = new Tree();
+
+        let updateFrequency = 60; // update 60 times per second
+        let interval = 1000 / updateFrequency; // calculate the interval in milliseconds
+        let lastUpdate = Date.now();
 
 
         // Render loop
         function render() {
+            let currentTime = Date.now();
+            if (currentTime - lastUpdate >= interval) {
+                gameManager.update();
 
+                // Update the camera's position and rotation to match the player's position and rotation
 
-            zombie.update();
-            gameManager.update();
+                camera.lookAt(gameManager.player.mesh.position);
 
-            // Update the camera's position and rotation to match the player's position and rotation
-            camera.position.x = gameManager.player.mesh.position.x;
-            camera.position.z = gameManager.player.mesh.position.z + 10;
-            camera.position.y = gameManager.player.mesh.position.y + 4;
-            camera.lookAt(gameManager.player.mesh.position);
+                // Keep isometric angle
+                camera.rotation.x;
+                camera.rotation.y;
+                camera.rotation.z;
 
-            // Keep isometric angle
-            camera.rotation.x;
-            camera.rotation.y;
-            camera.rotation.z;
-
-            // Step the physics simulation
-            world.step(1 / 60);
-
+                // Step the physics simulation
+                world.step(1 / 60);
+            }
             requestAnimationFrame(render);
             renderer.render(scene, camera);
-
-        };
+        }
 
         // Start render loop
         render();
