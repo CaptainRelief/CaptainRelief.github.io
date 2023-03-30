@@ -37,11 +37,6 @@
 
 
 
-        function lerp(start, end, t) {
-            return (1 - t) * start + t * end;
-        }
-
-
         class SpriteManager {
             constructor() {
                 this.sprites = {}; // store all sprites in an object
@@ -77,14 +72,19 @@
         class Player {
             constructor(spriteManager) {
                 this.spriteManager = spriteManager;
+
+                this.velocity = new CANNON.Vec3();
+                
+
                 this.states = {
                     IDLE: "idle",
                     MOVE: "move",
                     ATTACK: "attack"
                 };
                 this.currentState = this.states.IDLE;
+                this.previousState = null;
                 this.isHitboxActive = false;
-                this.speed = 0.002;
+                this.speed = 0.5;
 
                 // create player mesh
                 this.mesh = new THREE.Mesh(
@@ -126,22 +126,144 @@
 
                 // create player body
                 this.body = new CANNON.Body({
-                    mass: 100,
+                    mass: 10,
                     position: new CANNON.Vec3(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z),
-                    shape: new CANNON.Box(new CANNON.Vec3(0.25, 0.5, 1)),
+                    shape: new CANNON.Cylinder(0.6, 0.6, 1, 16),
                     fixedRotation: true,
                 });
-
-
+                
+                
 
 
                 // add the body to the physics world
                 world.addBody(this.body);
+                
+                this.input = {
+                    left: false,
+                    right: false,
+                    up: false,
+                    down: false,
+                    attack: false
+                };
 
+                
+                
+
+
+                this.handlePlayerInput();
 
 
 
             }
+
+            
+            handlePlayerInput() {
+                // Handle user input
+                document.addEventListener("keydown", event => {
+                    if (event.keyCode === 65) this.input.left = true;
+                    if (event.keyCode === 87) this.input.up = true;
+                    if (event.keyCode === 68) this.input.right = true;
+                    if (event.keyCode === 83) this.input.down = true;
+                    if (event.keyCode === 90) this.input.attack = true;
+                });
+                document.addEventListener("keyup", event => {
+                    if (event.keyCode === 65) this.input.left = false;
+                    if (event.keyCode === 87) this.input.up = false;
+                    if (event.keyCode === 68) this.input.right = false;
+                    if (event.keyCode === 83) this.input.down = false;
+                    if (event.keyCode === 90) this.input.attack = false;
+                });
+         
+            }
+            
+            /*
+            handlePlayerInput() {
+            document.addEventListener("keydown", event => {
+            if (event.keyCode === 65) {
+                // Move left
+                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
+                // Transition from Idle to Moving state
+                this.previousState = this.currentState;
+                this.currentState = this.states.MOVE;
+                this.input.left = true;
+                }
+            } else if (event.keyCode === 68) {
+                // Move right
+                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
+                // Transition from Idle to Moving state
+                this.previousState = this.currentState;
+                this.currentState = this.states.MOVE;
+                this.input.right = true;
+                }
+            } else if (event.keyCode === 87) {
+                // Move up
+                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
+                // Transition from Idle to Moving state
+                this.previousState = this.currentState;
+                this.currentState = this.states.MOVE;
+                this.input.up = true;
+                }
+            } else if (event.keyCode === 83) {
+                // Move down
+                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
+                // Transition from Idle to Moving state
+                this.previousState = this.currentState;
+                this.currentState = this.states.MOVE;
+                this.input.down = true;
+                }
+            } else if (event.keyCode === 90) {
+                // Attack
+                if (this.currentState !== "Attacking") {
+                // Transition to Attacking state
+                this.previousState = this.currentState;
+                this.currentState = "Attacking";
+                }
+            }
+            });
+
+            document.addEventListener("keyup", event => {
+            if (event.keyCode === 65) {
+                // Stop moving left
+                if (this.currentState === this.states.MOVE && this.currentDirection === "left") {
+                // Transition from Moving to Idle state
+                this.previousState = this.currentState;
+                this.currentState = this.states.IDLE;
+                this.input.left = false;
+                }
+            } else if (event.keyCode === 68) {
+                // Stop moving right
+                if (this.currentState === this.states.MOVE && this.currentDirection === "right") {
+                // Transition from Moving to Idle state
+                this.previousState = this.currentState;
+                this.currentState = this.states.IDLE;
+                this.input.right = false;
+                }
+            } else if (event.keyCode === 87) {
+                // Stop moving up
+                if (this.currentState === this.states.MOVE && this.currentDirection === "up") {
+                // Transition from Moving to Idle state
+                this.previousState = this.currentState;
+                this.currentState = this.states.IDLE;
+                this.input.up = false;
+                }
+            } else if (event.keyCode === 83) {
+                // Stop moving down
+                if (this.currentState === this.states.MOVE && this.currentDirection === "down") {
+                // Transition from Moving to Idle state
+                this.previousState = this.currentState;
+                this.currentState = this.states.IDLE;
+                this.input.down = false;
+                }
+            } else if (event.keyCode === 90) {
+                // Stop attacking
+                if (this.currentState === "Attacking") {
+                // Transition from Attacking to previous state
+                this.currentState = this.previousState;
+                }
+            }
+            });
+        
+        }*/
 
             startAttack() {
 
@@ -194,38 +316,51 @@
 
             }
 
-
-
-
-
             // Move player based on user input
             update() {
-                let targetX;
-               
+                const previousState = this.currentState; // Remember the previous state before updating
 
-                if (gameManager.input.left) {
-                    targetX = this.body.position.x - this.speed;
-                    this.body.position.x = lerp(this.body.position.x, targetX, 0.05);
-                    this.changeState(this.states.MOVE, 'left');
-                } else if (gameManager.input.right) {
-                    targetX = this.body.position.x + this.speed;
-                    this.body.position.x = lerp(this.body.position.x, targetX, 0.05);
-                    this.changeState(this.states.MOVE, 'right');
-                } else if (gameManager.input.up) {
-                    targetX = this.body.position.z - this.speed;
-                    this.body.position.z = lerp(this.body.position.z, targetX, 0.05);
-                    this.changeState(this.states.MOVE, 'up');
-                } else if (gameManager.input.down) {
-                    targetX = this.body.position.z + this.speed;
-                    this.body.position.z = lerp(this.body.position.z, targetX, 0.05);
-                    this.changeState(this.states.MOVE, 'down');
-                } else if (gameManager.input.attack) {
-                    this.startAttack();
-                    this.changeState(this.states.ATTACK);
+                // Check for user input
+                let newState = this.states.IDLE; // Set default state to idle
+                let newDirection = null; // Set default direction to null
+                if (this.input.left) {
+                    this.velocity.x = -this.speed;
+                    newDirection = 'left';
+                } else if (this.input.right) {
+                    this.velocity.x = this.speed;
+                    newDirection = 'right';
                 } else {
-                    this.changeState(this.states.IDLE);
+                    this.velocity.x = 0; // Stop moving left/right if no input
                 }
 
+                if (this.input.up) {
+                    this.velocity.z = -this.speed;
+                    newDirection = 'up';
+                } else if (this.input.down) {
+                    this.velocity.z = this.speed;
+                    newDirection = 'down';
+                } else {
+                    this.velocity.z = 0; // Stop moving up/down if no input
+                }
+
+                if (this.input.attack) {
+                    this.startAttack();
+                    newState = this.states.ATTACK;
+                } else if (this.velocity.length() > 0) {
+                    newState = this.states.MOVE;
+                }
+
+                // Call changeState only when the current state is different from the previous state
+                if (newState !== previousState || newDirection !== this.currentDirection) {
+                    this.changeState(newState, newDirection);
+                }
+
+                // Apply the player's velocity to its rigid body using Cannon.js
+                const body = this.body; // Get the player's Cannon.js rigid body
+                const velocity = body.velocity;
+                const maxSpeed = 10; // Choose a suitable maximum speed
+                velocity.x = Math.min(Math.max(velocity.x + this.velocity.x, -maxSpeed), maxSpeed);
+                velocity.z = Math.min(Math.max(velocity.z + this.velocity.z, -maxSpeed), maxSpeed);
 
                 camera.position.x = gameManager.player.mesh.position.x;
                 camera.position.z = gameManager.player.mesh.position.z + 5;
@@ -233,25 +368,30 @@
 
                 this.mesh.position.set(this.body.position.x, this.body.position.y, this.body.position.z);
                 this.animate();
+
+  
+                
+                
             }
 
-
-            changeState(newState, direction = null) {
-                if (newState === this.states.MOVE && direction !== null) {
-                    this.currentDirection = direction;
+            changeState(newState) {
+                if (newState === this.states.MOVE) {
+                    if (this.velocity.x > 0) {
+                        this.currentDirection = 'right';
+                    } else if (this.velocity.x < 0) {
+                        this.currentDirection = 'left';
+                    } else if (this.velocity.z < 0) {
+                        this.currentDirection = 'up';
+                    } else if (this.velocity.z > 0) {
+                        this.currentDirection = 'down';
+                    }
                     this.currentFrameY = this.directions[this.currentDirection];
-
-                } else if (newState === this.states.IDLE && direction !== null) {
-                    this.currentDirection = direction;
+                } else if (newState === this.states.IDLE) {
                     this.currentFrameY = this.directions[this.currentDirection];
-
-                } else if (newState === this.states.ATTACK && direction !== null) {
-                    this.currentDirection = direction;
+                } else if (newState === this.states.ATTACK) {
                     this.currentFrameY = this.directions[this.currentDirection];
-
                 }
                 this.currentState = newState;
-
             }
 
             animate() {
@@ -288,7 +428,7 @@
                 }
             }
         }
-
+        
 
         class GameManager {
             constructor() {
@@ -296,60 +436,16 @@
                 this.spriteManager.loadSprite("player", 0, 0, 0.1, 0.1); // load the player sprite from the sprite sheet
                 this.player = new Player(this.spriteManager);
                 this.zombie = new Zombie();
-                this.input = {
-                    left: false,
-                    right: false,
-                    up: false,
-                    down: false,
-                    attack: false
-                };
-
-
-
-
-
-
-                this.handlePlayerInput();
-
             }
-
-
-            handlePlayerInput() {
-                // Handle user input
-                document.addEventListener("keydown", event => {
-                    if (event.keyCode === 37) this.input.left = true;
-                    if (event.keyCode === 38) this.input.up = true;
-                    if (event.keyCode === 39) this.input.right = true;
-                    if (event.keyCode === 40) this.input.down = true;
-                    if (event.keyCode === 90) this.input.attack = true;
-                });
-                document.addEventListener("keyup", event => {
-                    if (event.keyCode === 37) this.input.left = false;
-                    if (event.keyCode === 38) this.input.up = false;
-                    if (event.keyCode === 39) this.input.right = false;
-                    if (event.keyCode === 40) this.input.down = false;
-                    if (event.keyCode === 90) this.input.attack = false;
-                });
-
-            }
-
 
             update() {
 
-
-
-                this.player.update(this.input);
+                this.player.update(this.player.input);
                 this.zombie.update();
-
-
-
-
                 // Request next update
                 requestAnimationFrame(this.update.bind(this));
 
             }
-
-
         }
 
         class Zombie {
@@ -380,9 +476,6 @@
                 this.lastFrameUpdate = Date.now(); // store the time of the last frame update
                 this.animationDelay = 120; // delay between frame updates, in milliseconds
 
-
-
-
                 // create enemy mesh
                 this.mesh = new THREE.Mesh(
                     new THREE.BoxGeometry(0.5, 0.5, 0.5),
@@ -402,7 +495,7 @@
                     shape: new CANNON.Box(new CANNON.Vec3(0.25, 0.25, 0.25)),
                     fixedRotation: true
                 });
-                
+
                 // add the body to the physics world
                 world.addBody(this.body);
             }
@@ -459,7 +552,6 @@
 
         }
 
-
         class Tree {
             constructor() {
                 const treeGeometry = new THREE.PlaneGeometry(1, 1);
@@ -504,9 +596,6 @@
         const light = new THREE.AmbientLight(0x404040);
         scene.add(light);
 
-
-
-
         const size = 100;
         const divisions = 10;
         const gridHelper = new THREE.GridHelper(size, divisions);
@@ -520,9 +609,6 @@
         const groundGeometry = new THREE.BoxGeometry(size, 1, size);
         const ground = new THREE.Mesh(groundGeometry, groundMaterial);
         scene.add(ground);
-
-
-
 
         // Create a new world
         const world = new CANNON.World();
@@ -545,7 +631,6 @@
         let updateFrequency = 60; // update 60 times per second
         let interval = 1000 / updateFrequency; // calculate the interval in milliseconds
         let lastUpdate = Date.now();
-
 
         // Render loop
         function render() {
