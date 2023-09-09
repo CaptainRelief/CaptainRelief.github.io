@@ -691,27 +691,44 @@ const leftButton = document.getElementById('left-button');
     const attackButton = document.getElementById('attack-button');
 
     // Add event listeners to the buttons
-    leftButton.addEventListener('touchstart', () => {
+ leftButton.addEventListener('touchstart', () => {
         // Handle left button press
         gameManager.player.input.left = true;
     });
-    // Add event listeners to the buttons
+
+    leftButton.addEventListener('touchend', () => {
+        // Handle left button release
+        gameManager.player.input.left = false;
+    });
+
     rightButton.addEventListener('touchstart', () => {
         // Handle left button press
         gameManager.player.input.right = true;
     });
-    // Add event listeners to the buttons
-    upButton.addEventListener('touchstart', () => {
-        // Handle left button press
-        gameManager.player.input.up = true;
+
+    rightButton.addEventListener('touchend', () => {
+        // Handle left button release
+        gameManager.player.input.right = false;
     });
-    // Add event listeners to the buttons
-    downButton.addEventListener('touchstart', () => {
+ downButton.addEventListener('touchstart', () => {
         // Handle left button press
         gameManager.player.input.down = true;
     });
 
-    // Repeat the same pattern for other buttons (right, up, down, attack)
+    downButton.addEventListener('touchend', () => {
+        // Handle left button release
+        gameManager.player.input.down = false;
+    });
+ upButton.addEventListener('touchstart', () => {
+        // Handle left button press
+        gameManager.player.input.up = true;
+    });
+
+    upButton.addEventListener('touchend', () => {
+        // Handle left button release
+        gameManager.player.input.up = false;
+    });
+ // Repeat the same pattern for other buttons (right, up, down, attack)
     // ...
 
     // Prevent default touch events to avoid scrolling
