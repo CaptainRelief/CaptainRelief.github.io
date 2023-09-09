@@ -690,6 +690,12 @@ const leftButton = document.getElementById('left-button');
     const downButton = document.getElementById('down-button');
     const attackButton = document.getElementById('attack-button');
 
+    let isLeftButtonDown = false;
+    let isRightButtonDown = false;
+    let isUpButtonDown = false;
+    let isDownButtonDown = false;
+    let isAttackButtonDown = false
+
     // Add event listeners to the buttons
  leftButton.addEventListener('touchstart', () => {
         // Handle left button press
