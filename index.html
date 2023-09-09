@@ -695,10 +695,20 @@ const leftButton = document.getElementById('left-button');
         // Handle left button press
         gameManager.player.input.left = true;
     });
-
-    leftButton.addEventListener('touchend', () => {
-        // Handle left button release
-        gameManager.player.input.left = false;
+    // Add event listeners to the buttons
+    rightButton.addEventListener('touchstart', () => {
+        // Handle left button press
+        gameManager.player.input.right = true;
+    });
+    // Add event listeners to the buttons
+    upButton.addEventListener('touchstart', () => {
+        // Handle left button press
+        gameManager.player.input.up = true;
+    });
+    // Add event listeners to the buttons
+    downButton.addEventListener('touchstart', () => {
+        // Handle left button press
+        gameManager.player.input.down = true;
     });
 
     // Repeat the same pattern for other buttons (right, up, down, attack)
