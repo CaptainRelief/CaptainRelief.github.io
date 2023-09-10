@@ -735,12 +735,9 @@ document.addEventListener("touchmove", (e) => {
         const movementX = (clampedX / maxX) * 2 - 1; // -1 to 1
         const movementY = (clampedY / maxY) * 2 - 1; // -1 to 1
 
-        // Use movementX and movementY to control player movement
         // Update the player's velocity or direction accordingly
-
         gameManager.player.velocity.x = movementX * gameManager.player.speed;
         gameManager.player.velocity.z = movementY * gameManager.player.speed;
-    
     }
 });
 
@@ -749,6 +746,7 @@ document.addEventListener("touchend", () => {
     joystickControl.style.left = "30px";
     joystickControl.style.top = "30px";
 
+    // Update the player's velocity to stop movement
     gameManager.player.velocity.x = 0;
     gameManager.player.velocity.z = 0;
 });
