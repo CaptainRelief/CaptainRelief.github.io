@@ -799,12 +799,13 @@ joystick.container.addEventListener('touchmove', (e) => {
     // Convert directionX and directionY to movement input
     const speed = 0.5; // Adjust the speed to your desired value
     gameManager.player.input.moveDirectionX = directionX * speed;
-    gameManager.player.input.moveDirectionY = -directionY * speed; // Invert the Y-axis for correct movement
+    gameManager.player.input.moveDirectionY = directionY * speed; // Remove the inversion for Y-axis
 
     // Move the joystick knob based on the touch position
     joystick.knob.style.left = `${(directionX * joystick.radius) + joystick.centerX}px`;
     joystick.knob.style.top = `${(directionY * joystick.radius) + joystick.centerY}px`;
 });
+
 
 // Add event listener for touch end on joystick container
 joystick.container.addEventListener('touchend', () => {
