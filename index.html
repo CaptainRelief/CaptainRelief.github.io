@@ -17,47 +17,37 @@
             padding: 0;
         }
 
-        #touch-controls {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  width: 150px;
-  height: 150px;
-  background-color: rgba(0, 0, 0, 0.5);
-  border-radius: 50%;
-  padding: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+        #joystick-container {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        width: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: none; /* Prevent default touch behavior for joystick */
+    }
 
-#joystick-container {
-  width: 100px;
-  height: 100px;
-  background-color: rgba(255, 255, 255, 0.5);
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-#joystick {
-  width: 60px;
-  height: 60px;
-  background-color: rgba(0, 0, 0, 0.5);
-  border-radius: 50%;
-}
-
+    #joystick {
+        width: 60px;
+        height: 60px;
+        background-color: rgba(255, 255, 255, 0.7);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
     </style>
 </head>
 
 <body>
-    <div id="touch-controls">
-        <div id="joystick-container">
-          <div id="joystick"></div>
-        </div>
-      </div>
-      
+
+    <div id="joystick-container">
+        <div id="joystick"></div>
+    </div>
 
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
@@ -696,56 +686,74 @@
         // Start render loop
         render();
 
-        const joystickContainer = document.getElementById('joystick-container');
+
+        // Add this after your existing JavaScript code
+
+// Define joystick-related variables
+const joystickContainer = document.getElementById('joystick-container');
 const joystick = document.getElementById('joystick');
-
-let joystickCenterX, joystickCenterY;
-let joystickRadius = 50;
-
-// Initialize joystick position
-joystick.style.transform = `translate(${joystickRadius}px, ${joystickRadius}px)`;
+let joystickPressed = false;
+let joystickRadius = joystickContainer.offsetWidth / 2;
+let joystickCenterX = joystickContainer.offsetWidth / 2;
+let joystickCenterY = joystickContainer.offsetHeight / 2;
+let joystickPositionX = 0;
+let joystickPositionY = 0;
 
 // Add touch event listeners
 joystickContainer.addEventListener('touchstart', (e) => {
-  e.preventDefault();
-  const touch = e.touches[0];
-  joystickCenterX = touch.clientX - joystickContainer.getBoundingClientRect().left;
-  joystickCenterY = touch.clientY - joystickContainer.getBoundingClientRect().top;
-  joystick.style.transform = `translate(${joystickCenterX}px, ${joystickCenterY}px)`;
+    joystickPressed = true;
+    updateJoystickPosition(e.touches[0].clientX, e.touches[0].clientY);
 });
 
 joystickContainer.addEventListener('touchmove', (e) => {
-  e.preventDefault();
-  const touch = e.touches[0];
-  let x = touch.clientX - joystickContainer.getBoundingClientRect().left - joystickCenterX;
-  let y = touch.clientY - joystickContainer.getBoundingClientRect().top - joystickCenterY;
-
-  // Ensure joystick stays within its container
-  const distance = Math.sqrt(x * x + y * y);
-  if (distance > joystickRadius) {
-    const angle = Math.atan2(y, x);
-    x = joystickRadius * Math.cos(angle);
-    y = joystickRadius * Math.sin(angle);
-  }
-
-  joystick.style.transform = `translate(${joystickCenterX + x}px, ${joystickCenterY + y}px)`;
-
-  // Calculate movement based on joystick position (you may need to adjust these values)
-  const movementX = x / joystickRadius;
-  const movementY = y / joystickRadius;
-
-  // Use 'movementX' and 'movementY' to control player movement
-  // Update player's velocity or position accordingly
+    if (joystickPressed) {
+        updateJoystickPosition(e.touches[0].clientX, e.touches[0].clientY);
+    }
 });
 
 joystickContainer.addEventListener('touchend', () => {
-  // Reset joystick position
-  joystick.style.transform = `translate(${joystickRadius}px, ${joystickRadius}px)`;
-
-  // Stop player movement
-  // Update player's velocity or position accordingly
+    joystickPressed = false;
+    resetJoystickPosition();
 });
 
+// Function to update joystick position
+function updateJoystickPosition(clientX, clientY) {
+    const deltaX = clientX - joystickCenterX;
+    const deltaY = clientY - joystickCenterY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    if (distance <= joystickRadius) {
+        joystickPositionX = deltaX;
+        joystickPositionY = deltaY;
+    } else {
+        const angle = Math.atan2(deltaY, deltaX);
+        joystickPositionX = Math.cos(angle) * joystickRadius;
+        joystickPositionY = Math.sin(angle) * joystickRadius;
+    }
+
+    // Update player movement based on joystick position
+    const movementFactor = 0.02; // Adjust this for movement speed
+    gameManager.player.input.left = joystickPositionX < -10;
+    gameManager.player.input.right = joystickPositionX > 10;
+    gameManager.player.input.up = joystickPositionY < -10;
+    gameManager.player.input.down = joystickPositionY > 10;
+
+    // Update the visual position of the joystick
+    joystick.style.transform = `translate(${joystickPositionX}px, ${joystickPositionY}px)`;
+}
+
+// Function to reset joystick position
+function resetJoystickPosition() {
+    joystickPositionX = 0;
+    joystickPositionY = 0;
+    joystick.style.transform = 'translate(0, 0)';
+
+    // Reset player movement
+    gameManager.player.input.left = false;
+    gameManager.player.input.right = false;
+    gameManager.player.input.up = false;
+    gameManager.player.input.down = false;
+}
 
     </script>
 </body>
