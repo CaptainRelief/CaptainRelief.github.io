@@ -706,9 +706,13 @@ joystickContainer.addEventListener('touchstart', (e) => {
 });
 
 
+
 joystickContainer.addEventListener('touchmove', (e) => {
     if (joystickPressed) {
-        updateJoystickPosition(e.touches[0].clientX, e.touches[0].clientY);
+        const rect = joystickContainer.getBoundingClientRect();
+        const clientX = e.touches[0].clientX - rect.left;
+        const clientY = e.touches[0].clientY - rect.top;
+        updateJoystickPosition(clientX, clientY);
         e.preventDefault(); // Prevent page scrolling while using the joystick
     }
 });
