@@ -49,9 +49,9 @@ mobile-controls {
 </div>
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
-
-    <script type="importmap">
-      {
+ src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script> 
+<script type="importmap">
+    {
         "imports": {
           "three": "https://unpkg.com/three@0.148.0/build/three.module.js",
           "three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/"
@@ -742,6 +742,66 @@ const leftButton = document.getElementById('left-button');
         e.preventDefault();
     });
 
+
+
+    // Initialize Hammer.js for touch gestures
+    const hammer = new Hammer(document.body);
+
+    // Initialize virtual joystick parameters
+    const joystick = {
+        container: document.getElementById('joystick-container'),
+        radius: 50, // Adjust the radius to your desired size
+        centerX: 0, // Initialize center position
+        centerY: 0,
+    };
+
+    // Function to update joystick position
+    function updateJoystickPosition(event) {
+        const rect = joystick.container.getBoundingClientRect();
+        joystick.centerX = rect.left + rect.width / 2;
+        joystick.centerY = rect.top + rect.height / 2;
+    }
+
+    // Add event listeners for swipe gestures
+    hammer.on('swipeleft', () => {
+        // Handle swipe left for attack
+        gameManager.player.input.attack = true;
+    });
+
+    hammer.on('swiperight', () => {
+        // Handle swipe right for attack
+        gameManager.player.input.attack = true;
+    });
+
+    // Add event listener for touch start on joystick container
+    joystick.container.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        updateJoystickPosition(e.touches[0]);
+    });
+
+    // Add event listener for touch move on joystick container
+    joystick.container.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - joystick.centerX;
+        const deltaY = touch.clientY - joystick.centerY;
+
+        // Calculate the joystick angle and magnitude
+        const angle = Math.atan2(deltaY, deltaX);
+        const magnitude = Math.min(joystick.radius, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+
+        // Convert angle and magnitude to movement input
+        const speed = 0.5; // Adjust the speed to your desired value
+        gameManager.player.input.left = Math.cos(angle) * (magnitude / joystick.radius) * speed;
+        gameManager.player.input.up = Math.sin(angle) * (magnitude / joystick.radius) * speed;
+    });
+
+    // Add event listener for touch end on joystick container
+    joystick.container.addEventListener('touchend', () => {
+        // Reset joystick input when touch ends
+        gameManager.player.input.left = 0;
+        gameManager.player.input.up = 0;
+    });
 
 
     </script>
