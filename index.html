@@ -176,13 +176,13 @@
                 world.addBody(this.body);
                 
                 this.input = {
-                    left: false,
-                    right: false,
-                    up: false,
-                    down: false,
-                    attack: false
-                };
-
+            direction: null,
+            move: false,
+            attackDirection: null,
+            attack: false,
+            moveDirectionX: 0,
+            moveDirectionY: 0,
+        };
                 
                 
 
@@ -212,6 +212,28 @@
                 });
          
             }
+
+            updatePosition() {
+        if (this.input.move) {
+            // Handle player movement based on this.input.direction
+            // You can use a switch statement or if-else conditions here
+            // For example:
+            switch (this.input.direction) {
+                case 'left':
+                    // Update player position to move left
+                    break;
+                case 'right':
+                    // Update player position to move right
+                    break;
+                // Handle other directions similarly
+            }
+        }
+
+        // Handle player attacks based on this.input.attackDirection and this.input.attack
+        if (this.input.attack) {
+            // Handle player attack logic
+        }
+    }
             
             /*
             handlePlayerInput() {
@@ -477,6 +499,7 @@
 
             update() {
 
+                this.player.updatePosition();
                 this.player.update(this.player.input);
                 this.zombie.update();
                 // Request next update
