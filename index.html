@@ -761,13 +761,11 @@ joystick.container.addEventListener('touchmove', (e) => {
 
     // Calculate the joystick magnitude and direction
     const magnitude = Math.min(joystick.radius, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
-    let directionX = Math.cos(angle);
-    let directionY = Math.sin(angle);
+    const normalizedMagnitude = magnitude / joystick.radius;
 
-    // Normalize the direction vector
-    const magnitudeFactor = magnitude / joystick.radius;
-    directionX *= magnitudeFactor;
-    directionY *= magnitudeFactor;
+    // Calculate the direction vector components
+    const directionX = Math.cos(angle) * normalizedMagnitude;
+    const directionY = Math.sin(angle) * normalizedMagnitude;
 
     // Convert directionX and directionY to movement input
     const speed = 0.5; // Adjust the speed to your desired value
@@ -776,8 +774,9 @@ joystick.container.addEventListener('touchmove', (e) => {
 
     // Move the joystick knob based on the touch position
     joystick.knob.style.left = `${(directionX * joystick.radius) + joystick.centerX}px`;
-    joystick.knob.style.top = `${(-directionY * joystick.radius) + joystick.centerY}px`;
+    joystick.knob.style.top = `${(directionY * joystick.radius) + joystick.centerY}px`;
 });
+
 
 // Add event listener for touch end on joystick container
 joystick.container.addEventListener('touchend', () => {
