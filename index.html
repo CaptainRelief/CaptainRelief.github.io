@@ -692,12 +692,12 @@ hammer.on('swipe', (event) => {
     }
 });
 
-// Replace the existing joystick initialization and event listeners with this code
+// Initialize joystick-related variables
 const joystick = {
     container: document.getElementById('joystick-container'),
-    knob: document.getElementById('joystick'), // Reference to the joystick knob
-    radius: 50, // Adjust the radius to your desired size
-    centerX: 0, // Initialize center position
+    knob: document.getElementById('joystick'),
+    radius: 50, // Adjust the radius as needed
+    centerX: 0,
     centerY: 0,
 };
 
@@ -714,7 +714,7 @@ joystick.container.addEventListener('touchstart', (e) => {
     updateJoystickPosition(e.touches[0]);
 });
 
-// Modify the touchmove event listener as follows
+// Add event listener for touch move on joystick container
 joystick.container.addEventListener('touchmove', (e) => {
     e.preventDefault();
     const touch = e.touches[0];
@@ -733,15 +733,14 @@ joystick.container.addEventListener('touchmove', (e) => {
     const directionY = Math.sin(angle) * normalizedMagnitude;
 
     // Convert directionX and directionY to movement input
-    const speed = 0.5; // Adjust the speed to your desired value
+    const speed = 0.5; // Adjust the speed as needed
     gameManager.player.input.moveDirectionX = directionX * speed;
-    gameManager.player.input.moveDirectionY = directionY * speed; // Remove the inversion for Y-axis
+    gameManager.player.input.moveDirectionY = directionY * speed;
 
     // Move the joystick knob based on the touch position
     joystick.knob.style.left = `${(directionX * joystick.radius) + joystick.centerX}px`;
     joystick.knob.style.top = `${(directionY * joystick.radius) + joystick.centerY}px`;
 });
-
 
 // Add event listener for touch end on joystick container
 joystick.container.addEventListener('touchend', () => {
@@ -751,6 +750,7 @@ joystick.container.addEventListener('touchend', () => {
     joystick.knob.style.left = `${joystick.centerX}px`;
     joystick.knob.style.top = `${joystick.centerY}px`;
 });
+
 
     </script>
 </body>
