@@ -214,115 +214,28 @@
             }
 
             updatePosition() {
-        if (this.input.move) {
-            // Handle player movement based on this.input.direction
-            // You can use a switch statement or if-else conditions here
-            // For example:
-            switch (this.input.direction) {
-                case 'left':
-                    // Update player position to move left
-                    break;
-                case 'right':
-                    // Update player position to move right
-                    break;
-                // Handle other directions similarly
-            }
-        }
+    const joystickMoveDirectionX = this.input.moveDirectionX;
+    const joystickMoveDirectionY = this.input.moveDirectionY;
 
-        // Handle player attacks based on this.input.attackDirection and this.input.attack
-        if (this.input.attack) {
-            // Handle player attack logic
-        }
+    // Combine joystick and keyboard input for movement
+    const totalMoveDirectionX = this.input.moveDirectionX + (this.input.left ? -1 : 0) + (this.input.right ? 1 : 0);
+    const totalMoveDirectionY = this.input.moveDirectionY + (this.input.up ? -1 : 0) + (this.input.down ? 1 : 0);
+
+    // Calculate the final movement direction vector
+    const moveDirection = new THREE.Vector3(totalMoveDirectionX, 0, totalMoveDirectionY);
+
+    // Normalize the movement direction vector
+    if (moveDirection.length() > 0) {
+        moveDirection.normalize();
     }
-            
-            /*
-            handlePlayerInput() {
-            document.addEventListener("keydown", event => {
-            if (event.keyCode === 65) {
-                // Move left
-                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
-                // Transition from Idle to Moving state
-                this.previousState = this.currentState;
-                this.currentState = this.states.MOVE;
-                this.input.left = true;
-                }
-            } else if (event.keyCode === 68) {
-                // Move right
-                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
-                // Transition from Idle to Moving state
-                this.previousState = this.currentState;
-                this.currentState = this.states.MOVE;
-                this.input.right = true;
-                }
-            } else if (event.keyCode === 87) {
-                // Move up
-                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
-                // Transition from Idle to Moving state
-                this.previousState = this.currentState;
-                this.currentState = this.states.MOVE;
-                this.input.up = true;
-                }
-            } else if (event.keyCode === 83) {
-                // Move down
-                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
-                // Transition from Idle to Moving state
-                this.previousState = this.currentState;
-                this.currentState = this.states.MOVE;
-                this.input.down = true;
-                }
-            } else if (event.keyCode === 90) {
-                // Attack
-                if (this.currentState !== "Attacking") {
-                // Transition to Attacking state
-                this.previousState = this.currentState;
-                this.currentState = "Attacking";
-                }
-            }
-            });
 
-            document.addEventListener("keyup", event => {
-            if (event.keyCode === 65) {
-                // Stop moving left
-                if (this.currentState === this.states.MOVE && this.currentDirection === "left") {
-                // Transition from Moving to Idle state
-                this.previousState = this.currentState;
-                this.currentState = this.states.IDLE;
-                this.input.left = false;
-                }
-            } else if (event.keyCode === 68) {
-                // Stop moving right
-                if (this.currentState === this.states.MOVE && this.currentDirection === "right") {
-                // Transition from Moving to Idle state
-                this.previousState = this.currentState;
-                this.currentState = this.states.IDLE;
-                this.input.right = false;
-                }
-            } else if (event.keyCode === 87) {
-                // Stop moving up
-                if (this.currentState === this.states.MOVE && this.currentDirection === "up") {
-                // Transition from Moving to Idle state
-                this.previousState = this.currentState;
-                this.currentState = this.states.IDLE;
-                this.input.up = false;
-                }
-            } else if (event.keyCode === 83) {
-                // Stop moving down
-                if (this.currentState === this.states.MOVE && this.currentDirection === "down") {
-                // Transition from Moving to Idle state
-                this.previousState = this.currentState;
-                this.currentState = this.states.IDLE;
-                this.input.down = false;
-                }
-            } else if (event.keyCode === 90) {
-                // Stop attacking
-                if (this.currentState === "Attacking") {
-                // Transition from Attacking to previous state
-                this.currentState = this.previousState;
-                }
-            }
-            });
-        
-        }*/
+    // Now you can use the moveDirection vector to update the player's position
+    // Example:
+    this.mesh.position.add(moveDirection.multiplyScalar(this.speed));
+
+    // Rest of your code for handling attacks, animation, etc.
+}
+
 
             startAttack() {
 
