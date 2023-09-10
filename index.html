@@ -739,7 +739,11 @@ joystick.container.addEventListener('touchmove', (e) => {
 
     // Update the character's position based on the joystick input
     gameManager.player.updatePosition();
+
+    // Prevent camera rotation when moving the joystick
+    camera.rotation.set(0, 0, 0);
 });
+
 
 
 // Add event listener for touch end on joystick container
