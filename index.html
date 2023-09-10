@@ -16,68 +16,41 @@
             margin: 0;
             padding: 0;
         }
-mobile-controls {
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        z-index: 1; /* Ensure it's above the game canvas */
-    }
 
-    button {
-        margin: 5px;
-        padding: 10px;
-        font-size: 16px;
-        background-color: #333;
-        color: #fff;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-/* Add this CSS to your <style> section or in a separate CSS file */
-#joystick-container {
-    position: absolute;
-    width: 100px; /* Adjust the size of the joystick as needed */
+        .control {
+    width: 100px;
     height: 100px;
-    bottom: 20px; /* Adjust the position on the screen */
-    left: 20px;
-    border: 2px solid #333; /* Border for the joystick container */
-    border-radius: 50%; /* Rounded shape for the container */
-    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-    touch-action: none; /* Prevent browser's default touch gestures */
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.5);
+    position: absolute;
+    touch-action: none;
 }
 
 #joystick {
-    position: absolute;
-    width: 30px; /* Size of the joystick knob */
-    height: 30px;
-    background-color: #333; /* Color of the joystick knob */
-    border-radius: 50%; /* Rounded shape for the knob */
-    transform: translate(-50%, -50%); /* Center the knob within the container */
+    left: 20px;
+    bottom: 20px;
 }
 
+#attack-area {
+    right: 20px;
+    bottom: 20px;
+}
     </style>
 </head>
 
 <body>
-<div id="mobile-controls">
-    <button id="left-button">Left</button>
-    <button id="right-button">Right</button>
-    <button id="up-button">Up</button>
-    <button id="down-button">Down</button>
-    <button id="attack-button">Attack</button>
-</div>
 
-<div id="joystick-container">
-    <div id="joystick"></div>
-</div>
+    <!-- Virtual Joystick -->
+<div id="joystick" class="control"></div>
+
+<!-- Attack Area -->
+<div id="attack-area" class="control"></div>
+
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
- <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script> 
-<script type="importmap">
-    {
+
+    <script type="importmap">
+      {
         "imports": {
           "three": "https://unpkg.com/three@0.148.0/build/three.module.js",
           "three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/"
@@ -710,177 +683,85 @@ mobile-controls {
         // Start render loop
         render();
 
-const leftButton = document.getElementById('left-button');
-    const rightButton = document.getElementById('right-button');
-    const upButton = document.getElementById('up-button');
-    const downButton = document.getElementById('down-button');
-    const attackButton = document.getElementById('attack-button');
+        const joystick = document.getElementById("joystick");
+const attackArea = document.getElementById("attack-area");
 
-    let isLeftButtonDown = false;
-    let isRightButtonDown = false;
-    let isUpButtonDown = false;
-    let isDownButtonDown = false;
-    let isAttackButtonDown = false
+// Variables to store touch positions
+let joystickTouch = null;
+let attackTouch = null;
 
-    // Add event listeners to the buttons
- leftButton.addEventListener('touchstart', () => {
-        // Handle left button press
-        gameManager.player.input.left = true;
-    });
+// Sensitivity for joystick movement (adjust as needed)
+const sensitivity = 10;
 
-    leftButton.addEventListener('touchend', () => {
-        // Handle left button release
-        gameManager.player.input.left = false;
-    });
+// Add event listeners for touch events on the joystick
+joystick.addEventListener("touchstart", (event) => {
+    joystickTouch = event.touches[0];
+});
 
-    rightButton.addEventListener('touchstart', () => {
-        // Handle left button press
-        gameManager.player.input.right = true;
-    });
+joystick.addEventListener("touchmove", (event) => {
+    if (joystickTouch) {
+        // Calculate joystick movement based on touch position
+        const deltaX = event.touches[0].clientX - joystickTouch.clientX;
+        const deltaY = event.touches[0].clientY - joystickTouch.clientY;
 
-    rightButton.addEventListener('touchend', () => {
-        // Handle left button release
-        gameManager.player.input.right = false;
-    });
- downButton.addEventListener('touchstart', () => {
-        // Handle left button press
-        gameManager.player.input.down = true;
-    });
+        // Use deltaX and deltaY to control character movement
+        // Update character velocity based on joystick movement
+        player.velocity.x = deltaX / sensitivity;
+        player.velocity.z = -deltaY / sensitivity;
 
-    downButton.addEventListener('touchend', () => {
-        // Handle left button release
-        gameManager.player.input.down = false;
-    });
- upButton.addEventListener('touchstart', () => {
-        // Handle left button press
-        gameManager.player.input.up = true;
-    });
-
-    upButton.addEventListener('touchend', () => {
-        // Handle left button release
-        gameManager.player.input.up = false;
-    });
- // Repeat the same pattern for other buttons (right, up, down, attack)
-    // ...
-
-    // Prevent default touch events to avoid scrolling
-    document.body.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-    });
-
-
-
-    // Initialize Hammer.js for touch gestures
-    const hammer = new Hammer(document.body);
-
-    // Initialize virtual joystick parameters
-    const joystick = {
-        container: document.getElementById('joystick-container'),
-        radius: 50, // Adjust the radius to your desired size
-        centerX: 0, // Initialize center position
-        centerY: 0,
-    };
-
-    // Function to update joystick position
-    function updateJoystickPosition(event) {
-        const rect = joystick.container.getBoundingClientRect();
-        joystick.centerX = rect.left + rect.width / 2;
-        joystick.centerY = rect.top + rect.height / 2;
+        // Prevent scrolling on touch devices
+        event.preventDefault();
     }
-
-    // Add event listeners for swipe gestures
-    hammer.on('swipeleft', () => {
-        // Handle swipe left for attack
-        gameManager.player.input.attack = true;
-    });
-
-    hammer.on('swiperight', () => {
-        // Handle swipe right for attack
-        gameManager.player.input.attack = true;
-    });
-
-    // Add event listener for touch start on joystick container
-    joystick.container.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        updateJoystickPosition(e.touches[0]);
-    });
-
-    // Add event listener for touch move on joystick container
-    joystick.container.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const deltaX = touch.clientX - joystick.centerX;
-        const deltaY = touch.clientY - joystick.centerY;
-
-        // Calculate the joystick angle and magnitude
-        const angle = Math.atan2(deltaY, deltaX);
-        const magnitude = Math.min(joystick.radius, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
-
-        // Convert angle and magnitude to movement input
-        const speed = 0.5; // Adjust the speed to your desired value
-        gameManager.player.input.left = Math.cos(angle) * (magnitude / joystick.radius) * speed;
-        gameManager.player.input.up = Math.sin(angle) * (magnitude / joystick.radius) * speed;
-    });
-
-    // Add event listener for touch end on joystick container
-    joystick.container.addEventListener('touchend', () => {
-        // Reset joystick input when touch ends
-        gameManager.player.input.left = 0;
-        gameManager.player.input.up = 0;
-    });
-
-
-// Replace the existing joystick initialization and event listeners with this code
-const joystick = {
-    container: document.getElementById('joystick-container'),
-    knob: document.getElementById('joystick'), // Reference to the joystick knob
-    radius: 50, // Adjust the radius to your desired size
-    centerX: 0, // Initialize center position
-    centerY: 0,
-};
-
-// Function to update joystick position
-function updateJoystickPosition(event) {
-    const rect = joystick.container.getBoundingClientRect();
-    joystick.centerX = rect.left + rect.width / 2;
-    joystick.centerY = rect.top + rect.height / 2;
-}
-
-// Add event listener for touch start on joystick container
-joystick.container.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    updateJoystickPosition(e.touches[0]);
 });
 
-// Add event listener for touch move on joystick container
-joystick.container.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const deltaX = touch.clientX - joystick.centerX;
-    const deltaY = touch.clientY - joystick.centerY;
-
-    // Calculate the joystick angle and magnitude
-    const angle = Math.atan2(deltaY, deltaX);
-    const magnitude = Math.min(joystick.radius, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
-
-    // Convert angle and magnitude to movement input
-    const speed = 0.5; // Adjust the speed to your desired value
-    gameManager.player.input.left = Math.cos(angle) * (magnitude / joystick.radius) * speed;
-    gameManager.player.input.up = Math.sin(angle) * (magnitude / joystick.radius) * speed;
-
-    // Move the joystick knob based on the touch position
-    joystick.knob.style.left = `${(magnitude * Math.cos(angle)) + joystick.centerX}px`;
-    joystick.knob.style.top = `${(magnitude * Math.sin(angle)) + joystick.centerY}px`;
+joystick.addEventListener("touchend", () => {
+    // Reset joystick touch
+    joystickTouch = null;
+    // Stop character movement
+    player.velocity.x = 0;
+    player.velocity.z = 0;
 });
 
-// Add event listener for touch end on joystick container
-joystick.container.addEventListener('touchend', () => {
-    // Reset joystick input and return the knob to the center
-    gameManager.player.input.left = 0;
-    gameManager.player.input.up = 0;
-    joystick.knob.style.left = `${joystick.centerX}px`;
-    joystick.knob.style.top = `${joystick.centerY}px`;
+// Add event listeners for touch events on the attack area
+attackArea.addEventListener("touchstart", (event) => {
+    attackTouch = event.touches[0];
 });
+
+attackArea.addEventListener("touchmove", (event) => {
+    if (attackTouch) {
+        // Calculate swipe direction based on touch position changes
+        const deltaX = event.touches[0].clientX - attackTouch.clientX;
+        const deltaY = event.touches[0].clientY - attackTouch.clientY;
+
+        // Determine swipe direction (you can customize this logic)
+        let swipeDirection = "";
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            if (deltaX > 0) {
+                swipeDirection = "right";
+            } else {
+                swipeDirection = "left";
+            }
+        } else {
+            if (deltaY > 0) {
+                swipeDirection = "down";
+            } else {
+                swipeDirection = "up";
+            }
+        }
+
+        // Handle the swipe direction for character attacks
+        player.attack(swipeDirection);
+
+        // Prevent scrolling on touch devices
+        event.preventDefault();
+    }
+});
+
+attackArea.addEventListener("touchend", () => {
+    // Reset attack touch
+    attackTouch = null;
+});
+
     </script>
 </body>
 
