@@ -698,18 +698,54 @@
     // Initialize Hammer.js for touch gestures
     const hammer = new Hammer(document.body);
 
+// Add event listeners for swipe gestures
+hammer.get('swipe').set({ direction: Hammer.DIRECTION_ALL }); // Enable all directions
 
-    // Add event listeners for swipe gestures
-    hammer.on('swipeleft', () => {
-        // Handle swipe left for attack
+hammer.on('swipe', (event) => {
+    // Determine the direction of the swipe
+    const swipeDirection = event.offsetDirection;
+
+    // Map swipe directions to attack directions
+    let attackDirection = null;
+    switch (swipeDirection) {
+        case Hammer.DIRECTION_LEFT:
+            attackDirection = 'left';
+            break;
+        case Hammer.DIRECTION_RIGHT:
+            attackDirection = 'right';
+            break;
+        case Hammer.DIRECTION_UP:
+            attackDirection = 'up';
+            break;
+        case Hammer.DIRECTION_DOWN:
+            attackDirection = 'down';
+            break;
+        case Hammer.DIRECTION_UP_LEFT:
+            attackDirection = 'upleft';
+            break;
+        case Hammer.DIRECTION_UP_RIGHT:
+            attackDirection = 'upright';
+            break;
+        case Hammer.DIRECTION_DOWN_LEFT:
+            attackDirection = 'downleft';
+            break;
+        case Hammer.DIRECTION_DOWN_RIGHT:
+            attackDirection = 'downright';
+            break;
+        default:
+            // Handle other swipe directions or gestures if needed
+            break;
+    }
+
+    // Handle the attack in the specified direction
+    if (attackDirection) {
+        // Set the attack direction based on the swipe
+        gameManager.player.input.attackDirection = attackDirection;
+
+        // Trigger the attack
         gameManager.player.input.attack = true;
-    });
-
-    hammer.on('swiperight', () => {
-        // Handle swipe right for attack
-        gameManager.player.input.attack = true;
-    });
-
+    }
+});
 
 // Replace the existing joystick initialization and event listeners with this code
 const joystick = {
