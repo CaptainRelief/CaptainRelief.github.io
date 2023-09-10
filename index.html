@@ -729,10 +729,13 @@ attackArea.addEventListener("touchstart", (event) => {
 
 attackArea.addEventListener("touchmove", (event) => {
     if (attackTouch) {
-        // Calculate swipe direction based on touch position changes
-        const deltaX = event.touches[0].clientX - attackTouch.clientX;
-        const deltaY = event.touches[0].clientY - attackTouch.clientY;
+// Inside the "touchmove" event handler for the joystick
+const deltaX = event.touches[0].clientX - joystickTouch.clientX;
+const deltaY = event.touches[0].clientY - joystickTouch.clientY;
 
+// Update player's velocity based on joystick input
+player.velocity.x = deltaX / sensitivity;
+player.velocity.z = -deltaY / sensitivity;
         // Determine swipe direction (you can customize this logic)
         let swipeDirection = "";
         if (Math.abs(deltaX) > Math.abs(deltaY)) {
