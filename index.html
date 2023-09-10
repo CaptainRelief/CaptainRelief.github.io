@@ -202,94 +202,6 @@
          
             }
             
-            /*
-            handlePlayerInput() {
-            document.addEventListener("keydown", event => {
-            if (event.keyCode === 65) {
-                // Move left
-                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
-                // Transition from Idle to Moving state
-                this.previousState = this.currentState;
-                this.currentState = this.states.MOVE;
-                this.input.left = true;
-                }
-            } else if (event.keyCode === 68) {
-                // Move right
-                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
-                // Transition from Idle to Moving state
-                this.previousState = this.currentState;
-                this.currentState = this.states.MOVE;
-                this.input.right = true;
-                }
-            } else if (event.keyCode === 87) {
-                // Move up
-                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
-                // Transition from Idle to Moving state
-                this.previousState = this.currentState;
-                this.currentState = this.states.MOVE;
-                this.input.up = true;
-                }
-            } else if (event.keyCode === 83) {
-                // Move down
-                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
-                // Transition from Idle to Moving state
-                this.previousState = this.currentState;
-                this.currentState = this.states.MOVE;
-                this.input.down = true;
-                }
-            } else if (event.keyCode === 90) {
-                // Attack
-                if (this.currentState !== "Attacking") {
-                // Transition to Attacking state
-                this.previousState = this.currentState;
-                this.currentState = "Attacking";
-                }
-            }
-            });
-
-            document.addEventListener("keyup", event => {
-            if (event.keyCode === 65) {
-                // Stop moving left
-                if (this.currentState === this.states.MOVE && this.currentDirection === "left") {
-                // Transition from Moving to Idle state
-                this.previousState = this.currentState;
-                this.currentState = this.states.IDLE;
-                this.input.left = false;
-                }
-            } else if (event.keyCode === 68) {
-                // Stop moving right
-                if (this.currentState === this.states.MOVE && this.currentDirection === "right") {
-                // Transition from Moving to Idle state
-                this.previousState = this.currentState;
-                this.currentState = this.states.IDLE;
-                this.input.right = false;
-                }
-            } else if (event.keyCode === 87) {
-                // Stop moving up
-                if (this.currentState === this.states.MOVE && this.currentDirection === "up") {
-                // Transition from Moving to Idle state
-                this.previousState = this.currentState;
-                this.currentState = this.states.IDLE;
-                this.input.up = false;
-                }
-            } else if (event.keyCode === 83) {
-                // Stop moving down
-                if (this.currentState === this.states.MOVE && this.currentDirection === "down") {
-                // Transition from Moving to Idle state
-                this.previousState = this.currentState;
-                this.currentState = this.states.IDLE;
-                this.input.down = false;
-                }
-            } else if (event.keyCode === 90) {
-                // Stop attacking
-                if (this.currentState === "Attacking") {
-                // Transition from Attacking to previous state
-                this.currentState = this.previousState;
-                }
-            }
-            });
-        
-        }*/
 
             startAttack() {
 
@@ -683,63 +595,96 @@
         // Start render loop
         render();
 
-        // Joystick container and joystick element
-const joystickContainer = document.getElementById('joystick-container');
-const joystick = document.getElementById('joystick');
+        class VirtualJoystick {
+    constructor(containerElement, options = {}) {
+        this.container = containerElement;
+        this.options = {
+            radius: options.radius || 50, // Radius of the joystick area
+            onMove: options.onMove || (() => {}), // Callback function for thumbstick movement
+        };
 
-// Variables to track joystick state
-let isJoystickPressed = false;
-let joystickCenterX, joystickCenterY;
+        this.thumbstick = document.createElement("div");
+        this.thumbstick.className = "thumbstick";
+        this.container.appendChild(this.thumbstick);
 
-// Event listeners for touch events
-joystickContainer.addEventListener('touchstart', handleJoystickStart);
-joystickContainer.addEventListener('touchmove', handleJoystickMove);
-joystickContainer.addEventListener('touchend', handleJoystickEnd);
+        this.isTouched = false;
+        this.touchStartPos = { x: 0, y: 0 };
+        this.thumbstickPos = { x: 0, y: 0 };
 
-function handleJoystickStart(event) {
-  event.preventDefault();
-  isJoystickPressed = true;
-  const rect = joystickContainer.getBoundingClientRect();
-  joystickCenterX = rect.left + rect.width / 2;
-  joystickCenterY = rect.top + rect.height / 2;
-}
-
-function handleJoystickMove(event) {
-  if (isJoystickPressed) {
-    event.preventDefault();
-    const touch = event.touches[0];
-    const deltaX = touch.clientX - joystickCenterX;
-    const deltaY = touch.clientY - joystickCenterY;
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-    // Limit the joystick's movement radius
-    const maxRadius = joystickContainer.clientWidth / 2;
-    if (distance > maxRadius) {
-      const angle = Math.atan2(deltaY, deltaX);
-      const clampedX = Math.cos(angle) * maxRadius;
-      const clampedY = Math.sin(angle) * maxRadius;
-      joystick.style.transform = `translate(${clampedX}px, ${clampedY}px)`;
-    } else {
-      joystick.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+        this.setupEventListeners();
     }
 
-    // Calculate and use deltaX and deltaY for character movement
-    const sensitivity = 0.1; // Adjust the sensitivity to control movement speed
-    const moveX = deltaX * sensitivity;
-    const moveY = deltaY * sensitivity;
+    setupEventListeners() {
+        this.thumbstick.addEventListener("touchstart", this.handleTouchStart.bind(this));
+        this.thumbstick.addEventListener("touchmove", this.handleTouchMove.bind(this));
+        this.thumbstick.addEventListener("touchend", this.handleTouchEnd.bind(this));
+    }
 
-    // Update the character's position or velocity based on moveX and moveY
-    // Example: player.move(moveX, moveY);
-    gameManager.player.move(moveX, moveY);
-  }
+    handleTouchStart(event) {
+        event.preventDefault();
+        this.isTouched = true;
+        const touch = event.touches[0];
+        this.touchStartPos.x = touch.clientX;
+        this.touchStartPos.y = touch.clientY;
+        this.thumbstick.style.transition = "none"; // Disable transition for instant response
+    }
+
+    handleTouchMove(event) {
+        event.preventDefault();
+        if (this.isTouched) {
+            const touch = event.touches[0];
+            const deltaX = touch.clientX - this.touchStartPos.x;
+            const deltaY = touch.clientY - this.touchStartPos.y;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+            if (distance <= this.options.radius) {
+                // Move the thumbstick
+                this.thumbstick.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+                this.thumbstickPos.x = deltaX / this.options.radius;
+                this.thumbstickPos.y = deltaY / this.options.radius;
+                // Callback for thumbstick movement
+                this.options.onMove(this.thumbstickPos);
+            } else {
+                // Limit the thumbstick's movement within its radius
+                const angle = Math.atan2(deltaY, deltaX);
+                const limitedX = Math.cos(angle) * this.options.radius;
+                const limitedY = Math.sin(angle) * this.options.radius;
+                this.thumbstick.style.transform = `translate(${limitedX}px, ${limitedY}px)`;
+                this.thumbstickPos.x = limitedX / this.options.radius;
+                this.thumbstickPos.y = limitedY / this.options.radius;
+                // Callback for thumbstick movement
+                this.options.onMove(this.thumbstickPos);
+            }
+        }
+    }
+
+    handleTouchEnd(event) {
+        event.preventDefault();
+        this.isTouched = false;
+        this.thumbstick.style.transition = "transform 0.2s ease"; // Restore transition
+        this.thumbstick.style.transform = "translate(0px, 0px)"; // Reset thumbstick position
+        this.thumbstickPos = { x: 0, y: 0 };
+        // Callback when thumbstick is released (optional)
+        // this.options.onRelease();
+    }
 }
 
-function handleJoystickEnd(event) {
-  isJoystickPressed = false;
-  joystick.style.transform = 'translate(-50%, -50%)'; // Reset the joystick position
-}
+// Get the joystick container element
+const joystickContainer = document.getElementById("joystick-container");
 
-
+// Create a VirtualJoystick instance
+const joystick = new VirtualJoystick(joystickContainer, {
+    radius: 50, // Adjust the radius as needed
+    onMove: (thumbstickPos) => {
+        // Handle player movement based on thumbstickPos
+        // You can update the player's velocity or direction here
+        // Example:
+        gameManager.player.input.left = thumbstickPos.x < -0.5;
+        gameManager.player.input.right = thumbstickPos.x > 0.5;
+        gameManager.player.input.up = thumbstickPos.y > 0.5;
+        gameManager.player.input.down = thumbstickPos.y < -0.5;
+    },
+});
     </script>
 </body>
 
