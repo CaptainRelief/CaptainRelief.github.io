@@ -710,65 +710,6 @@ mobile-controls {
         // Start render loop
         render();
 
-const leftButton = document.getElementById('left-button');
-    const rightButton = document.getElementById('right-button');
-    const upButton = document.getElementById('up-button');
-    const downButton = document.getElementById('down-button');
-    const attackButton = document.getElementById('attack-button');
-
-    let isLeftButtonDown = false;
-    let isRightButtonDown = false;
-    let isUpButtonDown = false;
-    let isDownButtonDown = false;
-    let isAttackButtonDown = false
-
-    // Add event listeners to the buttons
- leftButton.addEventListener('touchstart', () => {
-        // Handle left button press
-        gameManager.player.input.left = true;
-    });
-
-    leftButton.addEventListener('touchend', () => {
-        // Handle left button release
-        gameManager.player.input.left = false;
-    });
-
-    rightButton.addEventListener('touchstart', () => {
-        // Handle left button press
-        gameManager.player.input.right = true;
-    });
-
-    rightButton.addEventListener('touchend', () => {
-        // Handle left button release
-        gameManager.player.input.right = false;
-    });
- downButton.addEventListener('touchstart', () => {
-        // Handle left button press
-        gameManager.player.input.down = true;
-    });
-
-    downButton.addEventListener('touchend', () => {
-        // Handle left button release
-        gameManager.player.input.down = false;
-    });
- upButton.addEventListener('touchstart', () => {
-        // Handle left button press
-        gameManager.player.input.up = true;
-    });
-
-    upButton.addEventListener('touchend', () => {
-        // Handle left button release
-        gameManager.player.input.up = false;
-    });
- // Repeat the same pattern for other buttons (right, up, down, attack)
-    // ...
-
-    // Prevent default touch events to avoid scrolling
-    document.body.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-    });
-
-
 
     // Initialize Hammer.js for touch gestures
     const hammer = new Hammer(document.body);
