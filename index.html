@@ -705,9 +705,11 @@ joystickContainer.addEventListener('touchstart', (e) => {
     updateJoystickPosition(e.touches[0].clientX, e.touches[0].clientY);
 });
 
+
 joystickContainer.addEventListener('touchmove', (e) => {
     if (joystickPressed) {
         updateJoystickPosition(e.touches[0].clientX, e.touches[0].clientY);
+        e.preventDefault(); // Prevent page scrolling while using the joystick
     }
 });
 
@@ -731,12 +733,16 @@ function updateJoystickPosition(clientX, clientY) {
         joystickPositionY = Math.sin(angle) * joystickRadius;
     }
 
+    // Normalize joystick position
+    const normalizedX = joystickPositionX / joystickRadius;
+    const normalizedY = joystickPositionY / joystickRadius;
+
     // Update player movement based on joystick position
     const movementFactor = 0.02; // Adjust this for movement speed
-    gameManager.player.input.left = joystickPositionX < -10;
-    gameManager.player.input.right = joystickPositionX > 10;
-    gameManager.player.input.up = joystickPositionY < -10;
-    gameManager.player.input.down = joystickPositionY > 10;
+    gameManager.player.input.left = normalizedX < -0.2;
+    gameManager.player.input.right = normalizedX > 0.2;
+    gameManager.player.input.up = normalizedY < -0.2;
+    gameManager.player.input.down = normalizedY > 0.2;
 
     // Update the visual position of the joystick
     joystick.style.transform = `translate(${joystickPositionX}px, ${joystickPositionY}px)`;
