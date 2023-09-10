@@ -17,39 +17,50 @@
             padding: 0;
         }
 
-        #joystick-container {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            width: 120px;
-            height: 120px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 50%;
-            touch-action: none;
-        }
+        #touch-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 150px;
+  height: 150px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
-        #joystick {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-        }
+#joystick-container {
+  width: 100px;
+  height: 100px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
+#joystick {
+  width: 60px;
+  height: 60px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+}
 
     </style>
 </head>
 
 <body>
-    <div id="joystick-container">
-        <div id="joystick"></div>
+    <div id="touch-controls">
+        <div id="joystick-container">
+          <div id="joystick"></div>
+        </div>
       </div>
       
 
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
-
 
     <script type="importmap">
       {
@@ -204,6 +215,94 @@
          
             }
             
+            /*
+            handlePlayerInput() {
+            document.addEventListener("keydown", event => {
+            if (event.keyCode === 65) {
+                // Move left
+                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
+                // Transition from Idle to Moving state
+                this.previousState = this.currentState;
+                this.currentState = this.states.MOVE;
+                this.input.left = true;
+                }
+            } else if (event.keyCode === 68) {
+                // Move right
+                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
+                // Transition from Idle to Moving state
+                this.previousState = this.currentState;
+                this.currentState = this.states.MOVE;
+                this.input.right = true;
+                }
+            } else if (event.keyCode === 87) {
+                // Move up
+                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
+                // Transition from Idle to Moving state
+                this.previousState = this.currentState;
+                this.currentState = this.states.MOVE;
+                this.input.up = true;
+                }
+            } else if (event.keyCode === 83) {
+                // Move down
+                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
+                // Transition from Idle to Moving state
+                this.previousState = this.currentState;
+                this.currentState = this.states.MOVE;
+                this.input.down = true;
+                }
+            } else if (event.keyCode === 90) {
+                // Attack
+                if (this.currentState !== "Attacking") {
+                // Transition to Attacking state
+                this.previousState = this.currentState;
+                this.currentState = "Attacking";
+                }
+            }
+            });
+
+            document.addEventListener("keyup", event => {
+            if (event.keyCode === 65) {
+                // Stop moving left
+                if (this.currentState === this.states.MOVE && this.currentDirection === "left") {
+                // Transition from Moving to Idle state
+                this.previousState = this.currentState;
+                this.currentState = this.states.IDLE;
+                this.input.left = false;
+                }
+            } else if (event.keyCode === 68) {
+                // Stop moving right
+                if (this.currentState === this.states.MOVE && this.currentDirection === "right") {
+                // Transition from Moving to Idle state
+                this.previousState = this.currentState;
+                this.currentState = this.states.IDLE;
+                this.input.right = false;
+                }
+            } else if (event.keyCode === 87) {
+                // Stop moving up
+                if (this.currentState === this.states.MOVE && this.currentDirection === "up") {
+                // Transition from Moving to Idle state
+                this.previousState = this.currentState;
+                this.currentState = this.states.IDLE;
+                this.input.up = false;
+                }
+            } else if (event.keyCode === 83) {
+                // Stop moving down
+                if (this.currentState === this.states.MOVE && this.currentDirection === "down") {
+                // Transition from Moving to Idle state
+                this.previousState = this.currentState;
+                this.currentState = this.states.IDLE;
+                this.input.down = false;
+                }
+            } else if (event.keyCode === 90) {
+                // Stop attacking
+                if (this.currentState === "Attacking") {
+                // Transition from Attacking to previous state
+                this.currentState = this.previousState;
+                }
+            }
+            });
+        
+        }*/
 
             startAttack() {
 
@@ -376,24 +475,6 @@
                 this.spriteManager.loadSprite("player", 0, 0, 0.1, 0.1); // load the player sprite from the sprite sheet
                 this.player = new Player(this.spriteManager);
                 this.zombie = new Zombie();
-
-
-                          // Create a variable to store joystick data
-                          this.joystickData = {
-                    active: false,
-                    startX: 0,
-                    startY: 0,
-                    currentX: 0,
-                    currentY: 0,
-                };
-
-                // Add touch event listeners to the joystick container
-                const joystickContainer = document.getElementById("joystick-container");
-                joystickContainer.addEventListener("touchstart", this.handleTouchStart.bind(this));
-                joystickContainer.addEventListener("touchmove", this.handleTouchMove.bind(this));
-                joystickContainer.addEventListener("touchend", this.handleTouchEnd.bind(this));
-
-
             }
 
             update() {
@@ -404,67 +485,6 @@
                 requestAnimationFrame(this.update.bind(this));
 
             }
-
-            
-            handleTouchStart(event) {
-                event.preventDefault();
-                const touch = event.touches[0];
-                const joystick = document.getElementById("joystick");
-                const joystickRect = joystick.getBoundingClientRect();
-
-                this.joystickData.active = true;
-                this.joystickData.startX = touch.clientX;
-                this.joystickData.startY = touch.clientY;
-                this.joystickData.currentX = this.joystickData.startX;
-                this.joystickData.currentY = this.joystickData.startY;
-
-                joystick.style.left = `${this.joystickData.startX - joystickRect.width / 2}px`;
-                joystick.style.top = `${this.joystickData.startY - joystickRect.height / 2}px`;
-            }
-
-            handleTouchMove(event) {
-                if (!this.joystickData.active) return;
-                event.preventDefault();
-                const touch = event.touches[0];
-                const joystick = document.getElementById("joystick");
-                const joystickRect = joystick.getBoundingClientRect();
-
-                const deltaX = touch.clientX - this.joystickData.startX;
-                const deltaY = touch.clientY - this.joystickData.startY;
-                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-                // Limit the joystick's movement radius
-                const maxRadius = joystickRect.width / 2;
-                if (distance > maxRadius) {
-                    const angle = Math.atan2(deltaY, deltaX);
-                    this.joystickData.currentX = this.joystickData.startX + maxRadius * Math.cos(angle);
-                    this.joystickData.currentY = this.joystickData.startY + maxRadius * Math.sin(angle);
-                } else {
-                    this.joystickData.currentX = touch.clientX;
-                    this.joystickData.currentY = touch.clientY;
-                }
-
-                joystick.style.left = `${this.joystickData.currentX - joystickRect.width / 2}px`;
-                joystick.style.top = `${this.joystickData.currentY - joystickRect.height / 2}px`;
-
-                // Use deltaX and deltaY to control your player's movement
-                const deltaXNormalized = deltaX / maxRadius;
-                const deltaYNormalized = deltaY / maxRadius;
-
-                // Adjust player movement based on deltaXNormalized and deltaYNormalized
-                // You can use these values to control player velocity or direction
-            }
-
-            handleTouchEnd(event) {
-                event.preventDefault();
-                this.joystickData.active = false;
-                const joystick = document.getElementById("joystick");
-                joystick.style.left = "50%"; // Reset joystick position
-                joystick.style.top = "50%";
-            }
-
-            // ... (your existing code)
-        
         }
 
         class Zombie {
@@ -675,6 +695,56 @@
 
         // Start render loop
         render();
+
+        const joystickContainer = document.getElementById('joystick-container');
+const joystick = document.getElementById('joystick');
+
+let joystickCenterX, joystickCenterY;
+let joystickRadius = 50;
+
+// Initialize joystick position
+joystick.style.transform = `translate(${joystickRadius}px, ${joystickRadius}px)`;
+
+// Add touch event listeners
+joystickContainer.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  joystickCenterX = touch.clientX - joystickContainer.getBoundingClientRect().left;
+  joystickCenterY = touch.clientY - joystickContainer.getBoundingClientRect().top;
+  joystick.style.transform = `translate(${joystickCenterX}px, ${joystickCenterY}px)`;
+});
+
+joystickContainer.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  let x = touch.clientX - joystickContainer.getBoundingClientRect().left - joystickCenterX;
+  let y = touch.clientY - joystickContainer.getBoundingClientRect().top - joystickCenterY;
+
+  // Ensure joystick stays within its container
+  const distance = Math.sqrt(x * x + y * y);
+  if (distance > joystickRadius) {
+    const angle = Math.atan2(y, x);
+    x = joystickRadius * Math.cos(angle);
+    y = joystickRadius * Math.sin(angle);
+  }
+
+  joystick.style.transform = `translate(${joystickCenterX + x}px, ${joystickCenterY + y}px)`;
+
+  // Calculate movement based on joystick position (you may need to adjust these values)
+  const movementX = x / joystickRadius;
+  const movementY = y / joystickRadius;
+
+  // Use 'movementX' and 'movementY' to control player movement
+  // Update player's velocity or position accordingly
+});
+
+joystickContainer.addEventListener('touchend', () => {
+  // Reset joystick position
+  joystick.style.transform = `translate(${joystickRadius}px, ${joystickRadius}px)`;
+
+  // Stop player movement
+  // Update player's velocity or position accordingly
+});
 
 
     </script>
