@@ -16,36 +16,34 @@
             margin: 0;
             padding: 0;
         }
-
-        .control {
+        #joystick {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
     width: 100px;
     height: 100px;
+    background-color: rgba(0, 0, 0, 0.3);
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.5);
+}
+
+#joystick-control {
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
     position: absolute;
-    touch-action: none;
+    top: 30px;
+    left: 30px;
 }
 
-#joystick {
-    left: 20px;
-    bottom: 20px;
-}
-
-#attack-area {
-    right: 20px;
-    bottom: 20px;
-}
     </style>
 </head>
 
 <body>
-
-    <!-- Virtual Joystick -->
-<div id="joystick" class="control"></div>
-
-<!-- Attack Area -->
-<div id="attack-area" class="control"></div>
-
+    <div id="joystick">
+        <div id="joystick-control"></div>
+    </div>
+    
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
 
@@ -100,7 +98,7 @@
                 this.spriteManager = spriteManager;
 
                 this.velocity = new CANNON.Vec3();
-                
+
 
                 this.states = {
                     IDLE: "idle",
@@ -157,13 +155,13 @@
                     shape: new CANNON.Cylinder(0.6, 0.6, 1, 16),
                     fixedRotation: true,
                 });
-                
-                
+
+
 
 
                 // add the body to the physics world
                 world.addBody(this.body);
-                
+
                 this.input = {
                     left: false,
                     right: false,
@@ -172,8 +170,8 @@
                     attack: false
                 };
 
-                
-                
+
+
 
 
                 this.handlePlayerInput();
@@ -182,7 +180,7 @@
 
             }
 
-            
+
             handlePlayerInput() {
                 // Handle user input
                 document.addEventListener("keydown", event => {
@@ -199,9 +197,9 @@
                     if (event.keyCode === 83) this.input.down = false;
                     if (event.keyCode === 90) this.input.attack = false;
                 });
-         
+
             }
-            
+
             /*
             handlePlayerInput() {
             document.addEventListener("keydown", event => {
@@ -395,9 +393,9 @@
                 this.mesh.position.set(this.body.position.x, this.body.position.y, this.body.position.z);
                 this.animate();
 
-  
-                
-                
+
+
+
             }
 
             changeState(newState) {
@@ -454,7 +452,7 @@
                 }
             }
         }
-        
+
 
         class GameManager {
             constructor() {
@@ -683,87 +681,78 @@
         // Start render loop
         render();
 
+
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener("touchstart", (e) => {
+            touchStartX = e.touches[0].clientX;
+        });
+
+        document.addEventListener("touchend", (e) => {
+            touchEndX = e.changedTouches[0].clientX;
+            // Calculate the swipe distance
+            const swipeDistance = touchEndX - touchStartX;
+
+            // Determine if it's a swipe to the left or right
+            if (swipeDistance > 50) {
+                // It's a swipe to the right, trigger the player's attack
+                gameManager.player.input.attack = true;
+            }
+        });
+
+
         const joystick = document.getElementById("joystick");
-const attackArea = document.getElementById("attack-area");
+const joystickControl = document.getElementById("joystick-control");
 
-// Variables to store touch positions
-let joystickTouch = null;
-let attackTouch = null;
+let isJoystickActive = false;
+let joystickStartX = 0;
+let joystickStartY = 0;
 
-// Sensitivity for joystick movement (adjust as needed)
-const sensitivity = 10;
-
-// Add event listeners for touch events on the joystick
-joystick.addEventListener("touchstart", (event) => {
-    joystickTouch = event.touches[0];
+joystickControl.addEventListener("touchstart", (e) => {
+    isJoystickActive = true;
+    joystickStartX = e.touches[0].clientX - joystickControl.offsetLeft;
+    joystickStartY = e.touches[0].clientY - joystickControl.offsetTop;
 });
 
-joystick.addEventListener("touchmove", (event) => {
-    if (joystickTouch) {
-        // Calculate joystick movement based on touch position
-        const deltaX = event.touches[0].clientX - joystickTouch.clientX;
-        const deltaY = event.touches[0].clientY - joystickTouch.clientY;
+document.addEventListener("touchmove", (e) => {
+    if (isJoystickActive) {
+        const newX = e.touches[0].clientX - joystickStartX;
+        const newY = e.touches[0].clientY - joystickStartY;
 
-        // Use deltaX and deltaY to control character movement
-        // Update character velocity based on joystick movement
-        player.velocity.x = deltaX / sensitivity;
-        player.velocity.z = -deltaY / sensitivity;
+        // Limit joystick movement within the joystick area
+        const maxX = joystick.offsetWidth - joystickControl.offsetWidth;
+        const maxY = joystick.offsetHeight - joystickControl.offsetHeight;
 
-        // Prevent scrolling on touch devices
-        event.preventDefault();
+        const clampedX = Math.min(Math.max(0, newX), maxX);
+        const clampedY = Math.min(Math.max(0, newY), maxY);
+
+        joystickControl.style.left = clampedX + "px";
+        joystickControl.style.top = clampedY + "px";
+
+        // Calculate player movement based on joystick position
+        // You may need to adjust the calculations based on your game's mechanics
+        const movementX = (clampedX / maxX) * 2 - 1; // -1 to 1
+        const movementY = (clampedY / maxY) * 2 - 1; // -1 to 1
+
+        // Use movementX and movementY to control player movement
+        // Update the player's velocity or direction accordingly
+
+        gameManager.player.velocity.x = movementX * gameManager.player.speed;
+        gameManager.player.velocity.z = movementY * gameManager.player.speed;
+    
     }
 });
 
-joystick.addEventListener("touchend", () => {
-    // Reset joystick touch
-    joystickTouch = null;
-    // Stop character movement
-    player.velocity.x = 0;
-    player.velocity.z = 0;
+document.addEventListener("touchend", () => {
+    isJoystickActive = false;
+    joystickControl.style.left = "30px";
+    joystickControl.style.top = "30px";
+
+    gameManager.player.velocity.x = 0;
+    gameManager.player.velocity.z = 0;
 });
 
-// Add event listeners for touch events on the attack area
-attackArea.addEventListener("touchstart", (event) => {
-    attackTouch = event.touches[0];
-});
-
-attackArea.addEventListener("touchmove", (event) => {
-    if (attackTouch) {
-// Inside the "touchmove" event handler for the joystick
-const deltaX = event.touches[0].clientX - joystickTouch.clientX;
-const deltaY = event.touches[0].clientY - joystickTouch.clientY;
-
-// Update player's velocity based on joystick input
-player.velocity.x = deltaX / sensitivity;
-player.velocity.z = -deltaY / sensitivity;
-        // Determine swipe direction (you can customize this logic)
-        let swipeDirection = "";
-        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-            if (deltaX > 0) {
-                swipeDirection = "right";
-            } else {
-                swipeDirection = "left";
-            }
-        } else {
-            if (deltaY > 0) {
-                swipeDirection = "down";
-            } else {
-                swipeDirection = "up";
-            }
-        }
-
-        // Handle the swipe direction for character attacks
-        player.attack(swipeDirection);
-
-        // Prevent scrolling on touch devices
-        event.preventDefault();
-    }
-});
-
-attackArea.addEventListener("touchend", () => {
-    // Reset attack touch
-    attackTouch = null;
-});
 
     </script>
 </body>
