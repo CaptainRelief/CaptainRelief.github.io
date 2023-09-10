@@ -695,8 +695,8 @@
         render();
 
 
-    // Initialize Hammer.js for touch gestures
-    const hammer = new Hammer(document.body);
+// Initialize Hammer.js for touch gestures
+const hammer = new Hammer(document.body);
 
 // Add event listeners for swipe gestures
 hammer.get('swipe').set({ direction: Hammer.DIRECTION_ALL }); // Enable all directions
@@ -705,39 +705,48 @@ hammer.on('swipe', (event) => {
     // Determine the direction of the swipe
     const swipeDirection = event.offsetDirection;
 
-    // Map swipe directions to attack directions
-    let attackDirection = null;
+    // Map swipe directions to movement directions
+    let moveDirection = null;
     switch (swipeDirection) {
         case Hammer.DIRECTION_LEFT:
-            attackDirection = 'left';
+            moveDirection = 'left';
             break;
         case Hammer.DIRECTION_RIGHT:
-            attackDirection = 'right';
+            moveDirection = 'right';
             break;
         case Hammer.DIRECTION_UP:
-            attackDirection = 'up';
+            moveDirection = 'up';
             break;
         case Hammer.DIRECTION_DOWN:
-            attackDirection = 'down';
+            moveDirection = 'down';
             break;
         case Hammer.DIRECTION_UP_LEFT:
-            attackDirection = 'upleft';
+            moveDirection = 'upleft';
             break;
         case Hammer.DIRECTION_UP_RIGHT:
-            attackDirection = 'upright';
+            moveDirection = 'upright';
             break;
         case Hammer.DIRECTION_DOWN_LEFT:
-            attackDirection = 'downleft';
+            moveDirection = 'downleft';
             break;
         case Hammer.DIRECTION_DOWN_RIGHT:
-            attackDirection = 'downright';
+            moveDirection = 'downright';
             break;
         default:
             // Handle other swipe directions or gestures if needed
             break;
     }
 
-    // Handle the attack in the specified direction
+    // Handle player movement in the specified direction
+    if (moveDirection) {
+        // Set the player's movement direction based on the swipe
+        gameManager.player.input.direction = moveDirection;
+
+        // Trigger player movement
+        gameManager.player.input.move = true;
+    }
+
+    // Handle attacks separately (if needed)
     if (attackDirection) {
         // Set the attack direction based on the swipe
         gameManager.player.input.attackDirection = attackDirection;
@@ -789,23 +798,23 @@ joystick.container.addEventListener('touchmove', (e) => {
 
     // Convert directionX and directionY to movement input
     const speed = 0.5; // Adjust the speed to your desired value
-    gameManager.player.input.left = directionX * speed;
-    gameManager.player.input.up = -directionY * speed; // Invert the Y-axis for correct movement
+    gameManager.player.input.moveDirectionX = directionX * speed;
+    gameManager.player.input.moveDirectionY = -directionY * speed; // Invert the Y-axis for correct movement
 
     // Move the joystick knob based on the touch position
     joystick.knob.style.left = `${(directionX * joystick.radius) + joystick.centerX}px`;
     joystick.knob.style.top = `${(directionY * joystick.radius) + joystick.centerY}px`;
 });
 
-
 // Add event listener for touch end on joystick container
 joystick.container.addEventListener('touchend', () => {
     // Reset joystick input and return the knob to the center
-    gameManager.player.input.left = 0;
-    gameManager.player.input.up = 0;
+    gameManager.player.input.moveDirectionX = 0;
+    gameManager.player.input.moveDirectionY = 0;
     joystick.knob.style.left = `${joystick.centerX}px`;
     joystick.knob.style.top = `${joystick.centerY}px`;
 });
+
     </script>
 </body>
 
