@@ -16,10 +16,36 @@
             margin: 0;
             padding: 0;
         }
+
+        #joystick-container {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 120px;
+  height: 120px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  touch-action: none;
+}
+
+#joystick {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
     </style>
 </head>
 
 <body>
+    <div id="joystick-container">
+        <div id="joystick"></div>
+      </div>
+      
+
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
 
@@ -656,6 +682,63 @@
 
         // Start render loop
         render();
+
+        // Joystick container and joystick element
+const joystickContainer = document.getElementById('joystick-container');
+const joystick = document.getElementById('joystick');
+
+// Variables to track joystick state
+let isJoystickPressed = false;
+let joystickCenterX, joystickCenterY;
+
+// Event listeners for touch events
+joystickContainer.addEventListener('touchstart', handleJoystickStart);
+joystickContainer.addEventListener('touchmove', handleJoystickMove);
+joystickContainer.addEventListener('touchend', handleJoystickEnd);
+
+function handleJoystickStart(event) {
+  event.preventDefault();
+  isJoystickPressed = true;
+  const rect = joystickContainer.getBoundingClientRect();
+  joystickCenterX = rect.left + rect.width / 2;
+  joystickCenterY = rect.top + rect.height / 2;
+}
+
+function handleJoystickMove(event) {
+  if (isJoystickPressed) {
+    event.preventDefault();
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - joystickCenterX;
+    const deltaY = touch.clientY - joystickCenterY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    // Limit the joystick's movement radius
+    const maxRadius = joystickContainer.clientWidth / 2;
+    if (distance > maxRadius) {
+      const angle = Math.atan2(deltaY, deltaX);
+      const clampedX = Math.cos(angle) * maxRadius;
+      const clampedY = Math.sin(angle) * maxRadius;
+      joystick.style.transform = `translate(${clampedX}px, ${clampedY}px)`;
+    } else {
+      joystick.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+    }
+
+    // Calculate and use deltaX and deltaY for character movement
+    const sensitivity = 0.1; // Adjust the sensitivity to control movement speed
+    const moveX = deltaX * sensitivity;
+    const moveY = deltaY * sensitivity;
+
+    // Update the character's position or velocity based on moveX and moveY
+    // Example: player.move(moveX, moveY);
+    gameManager.player.move(moveX, moveY);
+  }
+}
+
+function handleJoystickEnd(event) {
+  isJoystickPressed = false;
+  joystick.style.transform = 'translate(-50%, -50%)'; // Reset the joystick position
+}
+
 
     </script>
 </body>
