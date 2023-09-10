@@ -16,6 +16,15 @@
             margin: 0;
             padding: 0;
         }
+mobile-controls {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 1; /* Ensure it's above the game canvas */
+    }
 
     button {
         margin: 5px;
@@ -53,6 +62,13 @@
 </head>
 
 <body>
+<div id="mobile-controls">
+    <button id="left-button">Left</button>
+    <button id="right-button">Right</button>
+    <button id="up-button">Up</button>
+    <button id="down-button">Down</button>
+    <button id="attack-button">Attack</button>
+</div>
 
 <div id="joystick-container">
     <div id="joystick"></div>
@@ -176,13 +192,13 @@
                 world.addBody(this.body);
                 
                 this.input = {
-            direction: null,
-            move: false,
-            attackDirection: null,
-            attack: false,
-            moveDirectionX: 0,
-            moveDirectionY: 0,
-        };
+                    left: false,
+                    right: false,
+                    up: false,
+                    down: false,
+                    attack: false
+                };
+
                 
                 
 
@@ -212,30 +228,95 @@
                 });
          
             }
+            
+            /*
+            handlePlayerInput() {
+            document.addEventListener("keydown", event => {
+            if (event.keyCode === 65) {
+                // Move left
+                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
+                // Transition from Idle to Moving state
+                this.previousState = this.currentState;
+                this.currentState = this.states.MOVE;
+                this.input.left = true;
+                }
+            } else if (event.keyCode === 68) {
+                // Move right
+                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
+                // Transition from Idle to Moving state
+                this.previousState = this.currentState;
+                this.currentState = this.states.MOVE;
+                this.input.right = true;
+                }
+            } else if (event.keyCode === 87) {
+                // Move up
+                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
+                // Transition from Idle to Moving state
+                this.previousState = this.currentState;
+                this.currentState = this.states.MOVE;
+                this.input.up = true;
+                }
+            } else if (event.keyCode === 83) {
+                // Move down
+                if (this.currentState !== this.states.MOVE && this.currentState !== this.states.ATTACK) {
+                // Transition from Idle to Moving state
+                this.previousState = this.currentState;
+                this.currentState = this.states.MOVE;
+                this.input.down = true;
+                }
+            } else if (event.keyCode === 90) {
+                // Attack
+                if (this.currentState !== "Attacking") {
+                // Transition to Attacking state
+                this.previousState = this.currentState;
+                this.currentState = "Attacking";
+                }
+            }
+            });
 
-            updatePosition() {
-    const joystickMoveDirectionX = this.input.moveDirectionX;
-    const joystickMoveDirectionY = this.input.moveDirectionY;
-
-    // Combine joystick and keyboard input for movement
-    const totalMoveDirectionX = this.input.moveDirectionX + (this.input.left ? -1 : 0) + (this.input.right ? 1 : 0);
-    const totalMoveDirectionY = this.input.moveDirectionY + (this.input.up ? -1 : 0) + (this.input.down ? 1 : 0);
-
-    // Calculate the final movement direction vector
-    const moveDirection = new THREE.Vector3(totalMoveDirectionX, 0, totalMoveDirectionY);
-
-    // Normalize the movement direction vector
-    if (moveDirection.length() > 0) {
-        moveDirection.normalize();
-    }
-
-    // Now you can use the moveDirection vector to update the player's position
-    // Example:
-    this.mesh.position.add(moveDirection.multiplyScalar(this.speed));
-
-    // Rest of your code for handling attacks, animation, etc.
-}
-
+            document.addEventListener("keyup", event => {
+            if (event.keyCode === 65) {
+                // Stop moving left
+                if (this.currentState === this.states.MOVE && this.currentDirection === "left") {
+                // Transition from Moving to Idle state
+                this.previousState = this.currentState;
+                this.currentState = this.states.IDLE;
+                this.input.left = false;
+                }
+            } else if (event.keyCode === 68) {
+                // Stop moving right
+                if (this.currentState === this.states.MOVE && this.currentDirection === "right") {
+                // Transition from Moving to Idle state
+                this.previousState = this.currentState;
+                this.currentState = this.states.IDLE;
+                this.input.right = false;
+                }
+            } else if (event.keyCode === 87) {
+                // Stop moving up
+                if (this.currentState === this.states.MOVE && this.currentDirection === "up") {
+                // Transition from Moving to Idle state
+                this.previousState = this.currentState;
+                this.currentState = this.states.IDLE;
+                this.input.up = false;
+                }
+            } else if (event.keyCode === 83) {
+                // Stop moving down
+                if (this.currentState === this.states.MOVE && this.currentDirection === "down") {
+                // Transition from Moving to Idle state
+                this.previousState = this.currentState;
+                this.currentState = this.states.IDLE;
+                this.input.down = false;
+                }
+            } else if (event.keyCode === 90) {
+                // Stop attacking
+                if (this.currentState === "Attacking") {
+                // Transition from Attacking to previous state
+                this.currentState = this.previousState;
+                }
+            }
+            });
+        
+        }*/
 
             startAttack() {
 
@@ -412,7 +493,6 @@
 
             update() {
 
-                this.player.updatePosition();
                 this.player.update(this.player.input);
                 this.zombie.update();
                 // Request next update
@@ -630,74 +710,132 @@
         // Start render loop
         render();
 
+const leftButton = document.getElementById('left-button');
+    const rightButton = document.getElementById('right-button');
+    const upButton = document.getElementById('up-button');
+    const downButton = document.getElementById('down-button');
+    const attackButton = document.getElementById('attack-button');
 
-// Initialize Hammer.js for touch gestures
-const hammer = new Hammer(document.body);
+    let isLeftButtonDown = false;
+    let isRightButtonDown = false;
+    let isUpButtonDown = false;
+    let isDownButtonDown = false;
+    let isAttackButtonDown = false
 
-// Add event listeners for swipe gestures
-hammer.get('swipe').set({ direction: Hammer.DIRECTION_ALL }); // Enable all directions
+    // Add event listeners to the buttons
+ leftButton.addEventListener('touchstart', () => {
+        // Handle left button press
+        gameManager.player.input.left = true;
+    });
 
-hammer.on('swipe', (event) => {
-    // Determine the direction of the swipe
-    const swipeDirection = event.offsetDirection;
+    leftButton.addEventListener('touchend', () => {
+        // Handle left button release
+        gameManager.player.input.left = false;
+    });
 
-    // Map swipe directions to movement directions
-    let moveDirection = null;
-    switch (swipeDirection) {
-        case Hammer.DIRECTION_LEFT:
-            moveDirection = 'left';
-            break;
-        case Hammer.DIRECTION_RIGHT:
-            moveDirection = 'right';
-            break;
-        case Hammer.DIRECTION_UP:
-            moveDirection = 'up';
-            break;
-        case Hammer.DIRECTION_DOWN:
-            moveDirection = 'down';
-            break;
-        case Hammer.DIRECTION_UP_LEFT:
-            moveDirection = 'upleft';
-            break;
-        case Hammer.DIRECTION_UP_RIGHT:
-            moveDirection = 'upright';
-            break;
-        case Hammer.DIRECTION_DOWN_LEFT:
-            moveDirection = 'downleft';
-            break;
-        case Hammer.DIRECTION_DOWN_RIGHT:
-            moveDirection = 'downright';
-            break;
-        default:
-            // Handle other swipe directions or gestures if needed
-            break;
+    rightButton.addEventListener('touchstart', () => {
+        // Handle left button press
+        gameManager.player.input.right = true;
+    });
+
+    rightButton.addEventListener('touchend', () => {
+        // Handle left button release
+        gameManager.player.input.right = false;
+    });
+ downButton.addEventListener('touchstart', () => {
+        // Handle left button press
+        gameManager.player.input.down = true;
+    });
+
+    downButton.addEventListener('touchend', () => {
+        // Handle left button release
+        gameManager.player.input.down = false;
+    });
+ upButton.addEventListener('touchstart', () => {
+        // Handle left button press
+        gameManager.player.input.up = true;
+    });
+
+    upButton.addEventListener('touchend', () => {
+        // Handle left button release
+        gameManager.player.input.up = false;
+    });
+ // Repeat the same pattern for other buttons (right, up, down, attack)
+    // ...
+
+    // Prevent default touch events to avoid scrolling
+    document.body.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+    });
+
+
+
+    // Initialize Hammer.js for touch gestures
+    const hammer = new Hammer(document.body);
+
+    // Initialize virtual joystick parameters
+    const joystick = {
+        container: document.getElementById('joystick-container'),
+        radius: 50, // Adjust the radius to your desired size
+        centerX: 0, // Initialize center position
+        centerY: 0,
+    };
+
+    // Function to update joystick position
+    function updateJoystickPosition(event) {
+        const rect = joystick.container.getBoundingClientRect();
+        joystick.centerX = rect.left + rect.width / 2;
+        joystick.centerY = rect.top + rect.height / 2;
     }
 
-    // Handle player movement in the specified direction
-    if (moveDirection) {
-        // Set the player's movement direction based on the swipe
-        gameManager.player.input.direction = moveDirection;
-
-        // Trigger player movement
-        gameManager.player.input.move = true;
-    }
-
-    // Handle attacks separately (if needed)
-    if (attackDirection) {
-        // Set the attack direction based on the swipe
-        gameManager.player.input.attackDirection = attackDirection;
-
-        // Trigger the attack
+    // Add event listeners for swipe gestures
+    hammer.on('swipeleft', () => {
+        // Handle swipe left for attack
         gameManager.player.input.attack = true;
-    }
-});
+    });
 
-// Initialize joystick-related variables
+    hammer.on('swiperight', () => {
+        // Handle swipe right for attack
+        gameManager.player.input.attack = true;
+    });
+
+    // Add event listener for touch start on joystick container
+    joystick.container.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        updateJoystickPosition(e.touches[0]);
+    });
+
+    // Add event listener for touch move on joystick container
+    joystick.container.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - joystick.centerX;
+        const deltaY = touch.clientY - joystick.centerY;
+
+        // Calculate the joystick angle and magnitude
+        const angle = Math.atan2(deltaY, deltaX);
+        const magnitude = Math.min(joystick.radius, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+
+        // Convert angle and magnitude to movement input
+        const speed = 0.5; // Adjust the speed to your desired value
+        gameManager.player.input.left = Math.cos(angle) * (magnitude / joystick.radius) * speed;
+        gameManager.player.input.up = Math.sin(angle) * (magnitude / joystick.radius) * speed;
+    });
+
+    // Add event listener for touch end on joystick container
+    joystick.container.addEventListener('touchend', () => {
+        // Reset joystick input when touch ends
+        gameManager.player.input.left = 0;
+        gameManager.player.input.up = 0;
+    });
+
+
+// Replace the existing joystick initialization and event listeners with this code
 const joystick = {
     container: document.getElementById('joystick-container'),
-    knob: document.getElementById('joystick'),
-    radius: 50, // Adjust the radius as needed
-    centerX: 0,
+    knob: document.getElementById('joystick'), // Reference to the joystick knob
+    radius: 50, // Adjust the radius to your desired size
+    centerX: 0, // Initialize center position
     centerY: 0,
 };
 
@@ -721,41 +859,28 @@ joystick.container.addEventListener('touchmove', (e) => {
     const deltaX = touch.clientX - joystick.centerX;
     const deltaY = touch.clientY - joystick.centerY;
 
-    // Calculate the joystick angle
+    // Calculate the joystick angle and magnitude
     const angle = Math.atan2(deltaY, deltaX);
-
-    // Calculate the joystick magnitude and direction
     const magnitude = Math.min(joystick.radius, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
-    const normalizedMagnitude = magnitude / joystick.radius;
 
-    // Calculate the direction vector components
-    const directionX = Math.cos(angle) * normalizedMagnitude;
-    const directionY = Math.sin(angle) * normalizedMagnitude;
-
-    // Convert directionX and directionY to movement input
+    // Convert angle and magnitude to movement input
     const speed = 0.5; // Adjust the speed to your desired value
-    gameManager.player.input.moveDirectionX = directionX * speed;
-    gameManager.player.input.moveDirectionY = directionY * speed;
+    gameManager.player.input.left = Math.cos(angle) * (magnitude / joystick.radius) * speed;
+    gameManager.player.input.up = Math.sin(angle) * (magnitude / joystick.radius) * speed;
 
-    // Update the character's position based on the joystick input
-    gameManager.player.updatePosition();
-
-    // Prevent camera rotation when moving the joystick
-    camera.rotation.set(0, 0, 0);
+    // Move the joystick knob based on the touch position
+    joystick.knob.style.left = `${(magnitude * Math.cos(angle)) + joystick.centerX}px`;
+    joystick.knob.style.top = `${(magnitude * Math.sin(angle)) + joystick.centerY}px`;
 });
-
-
 
 // Add event listener for touch end on joystick container
 joystick.container.addEventListener('touchend', () => {
     // Reset joystick input and return the knob to the center
-    gameManager.player.input.moveDirectionX = 0;
-    gameManager.player.input.moveDirectionY = 0;
+    gameManager.player.input.left = 0;
+    gameManager.player.input.up = 0;
     joystick.knob.style.left = `${joystick.centerX}px`;
     joystick.knob.style.top = `${joystick.centerY}px`;
 });
-
-
     </script>
 </body>
 
