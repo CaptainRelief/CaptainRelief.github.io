@@ -16,34 +16,10 @@
             margin: 0;
             padding: 0;
         }
-        #joystick {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    width: 100px;
-    height: 100px;
-    background-color: rgba(0, 0, 0, 0.3);
-    border-radius: 50%;
-}
-
-#joystick-control {
-    width: 40px;
-    height: 40px;
-    background-color: rgba(255, 255, 255, 0.7);
-    border-radius: 50%;
-    position: absolute;
-    top: 30px;
-    left: 30px;
-}
-
     </style>
 </head>
 
 <body>
-    <div id="joystick">
-        <div id="joystick-control"></div>
-    </div>
-    
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
 
@@ -98,7 +74,7 @@
                 this.spriteManager = spriteManager;
 
                 this.velocity = new CANNON.Vec3();
-
+                
 
                 this.states = {
                     IDLE: "idle",
@@ -155,13 +131,13 @@
                     shape: new CANNON.Cylinder(0.6, 0.6, 1, 16),
                     fixedRotation: true,
                 });
-
-
+                
+                
 
 
                 // add the body to the physics world
                 world.addBody(this.body);
-
+                
                 this.input = {
                     left: false,
                     right: false,
@@ -170,8 +146,8 @@
                     attack: false
                 };
 
-
-
+                
+                
 
 
                 this.handlePlayerInput();
@@ -180,7 +156,7 @@
 
             }
 
-
+            
             handlePlayerInput() {
                 // Handle user input
                 document.addEventListener("keydown", event => {
@@ -197,9 +173,9 @@
                     if (event.keyCode === 83) this.input.down = false;
                     if (event.keyCode === 90) this.input.attack = false;
                 });
-
+         
             }
-
+            
             /*
             handlePlayerInput() {
             document.addEventListener("keydown", event => {
@@ -393,9 +369,9 @@
                 this.mesh.position.set(this.body.position.x, this.body.position.y, this.body.position.z);
                 this.animate();
 
-
-
-
+  
+                
+                
             }
 
             changeState(newState) {
@@ -452,7 +428,7 @@
                 }
             }
         }
-
+        
 
         class GameManager {
             constructor() {
@@ -680,77 +656,6 @@
 
         // Start render loop
         render();
-
-
-        let touchStartX = 0;
-        let touchEndX = 0;
-
-        document.addEventListener("touchstart", (e) => {
-            touchStartX = e.touches[0].clientX;
-        });
-
-        document.addEventListener("touchend", (e) => {
-            touchEndX = e.changedTouches[0].clientX;
-            // Calculate the swipe distance
-            const swipeDistance = touchEndX - touchStartX;
-
-            // Determine if it's a swipe to the left or right
-            if (swipeDistance > 50) {
-                // It's a swipe to the right, trigger the player's attack
-                gameManager.player.input.attack = true;
-            }
-        });
-
-
-        const joystick = document.getElementById("joystick");
-const joystickControl = document.getElementById("joystick-control");
-
-let isJoystickActive = false;
-let joystickStartX = 0;
-let joystickStartY = 0;
-
-joystickControl.addEventListener("touchstart", (e) => {
-    isJoystickActive = true;
-    joystickStartX = e.touches[0].clientX - joystickControl.offsetLeft;
-    joystickStartY = e.touches[0].clientY - joystickControl.offsetTop;
-});
-
-document.addEventListener("touchmove", (e) => {
-    if (isJoystickActive) {
-        const newX = e.touches[0].clientX - joystickStartX;
-        const newY = e.touches[0].clientY - joystickStartY;
-
-        // Limit joystick movement within the joystick area
-        const maxX = joystick.offsetWidth - joystickControl.offsetWidth;
-        const maxY = joystick.offsetHeight - joystickControl.offsetHeight;
-
-        const clampedX = Math.min(Math.max(0, newX), maxX);
-        const clampedY = Math.min(Math.max(0, newY), maxY);
-
-        joystickControl.style.left = clampedX + "px";
-        joystickControl.style.top = clampedY + "px";
-
-        // Calculate player movement based on joystick position
-        // You may need to adjust the calculations based on your game's mechanics
-        const movementX = (clampedX / maxX) * 2 - 1; // -1 to 1
-        const movementY = (clampedY / maxY) * 2 - 1; // -1 to 1
-
-        // Update the player's velocity or direction accordingly
-        gameManager.player.velocity.x = movementX * gameManager.player.speed;
-        gameManager.player.velocity.z = movementY * gameManager.player.speed;
-    }
-});
-
-document.addEventListener("touchend", () => {
-    isJoystickActive = false;
-    joystickControl.style.left = "30px";
-    joystickControl.style.top = "30px";
-
-    // Update the player's velocity to stop movement
-    gameManager.player.velocity.x = 0;
-    gameManager.player.velocity.z = 0;
-});
-
 
     </script>
 </body>
